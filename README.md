@@ -8,40 +8,53 @@ Application fullstack avec Next.js (frontend) et FastAPI (backend).
 tfe-route-app/
 ├── backend/     # API FastAPI (Python)
 ├── frontend/    # Application Next.js (React/TypeScript)
+├── start-dev.ps1   # Script de démarrage unifié
+└── package.json    # Configuration globale
 ```
 
-## Installation
+## Installation (première fois uniquement)
 
 ### Backend (FastAPI)
 ```bash
 cd backend
 python -m venv venv
-venv\Scripts\activate  # Windows
+venv\Scripts\activate
 pip install -r requirements.txt
+cd ..
 ```
 
 ### Frontend (Next.js)
 ```bash
 cd frontend
 npm install
+cd ..
 ```
 
-## Démarrage
+## Démarrage rapide - UNE SEULE COMMANDE 🚀
 
-### Backend
-```bash
-cd backend
-venv\Scripts\activate
-uvicorn main:app --reload
-```
-L'API sera disponible sur http://localhost:8000
+Depuis la racine du projet :
 
-### Frontend
+### Option 1 - Via npm (recommandé)
 ```bash
-cd frontend
 npm run dev
 ```
-L'application sera disponible sur http://localhost:3000
+
+### Option 2 - Via PowerShell directement
+```bash
+.\start-dev.ps1
+```
+
+Cette commande lance automatiquement :
+- ✅ Backend FastAPI sur http://localhost:8000
+- ✅ Frontend Next.js sur http://localhost:3000
+
+Pour arrêter : `Ctrl+C`
+
+## URLs de l'application
+
+- **Frontend**: http://localhost:3000
+- **Backend API**: http://localhost:8000
+- **Documentation API**: http://localhost:8000/docs
 
 ## Développement
 

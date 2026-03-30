@@ -1,0 +1,14 @@
+{
+  "name": "tfe-route-app",
+  "version": "1.0.0",
+  "description": "Application fullstack Next.js + FastAPI",
+  "scripts": {
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\" --names \"API,WEB\" --prefix-colors \"blue,magenta\" --kill-others",
+    "dev:backend": "start-backend.bat",
+    "dev:frontend": "start-frontend.bat",
+    "install:all": "cd backend && pip install -r requirements.txt && cd ../frontend && npm install"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}
