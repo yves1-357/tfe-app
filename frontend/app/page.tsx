@@ -1,102 +1,80 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+import MapContainer from '@/components/MapContainer';
+import BottomPanel from '@/components/BottomPanel';
+import StopList from '@/components/StopList';
+import AddStopInput from '@/components/AddStopInput';
+import { Stop } from '@/types';
 
 export default function Home() {
-  const [apiMessage, setApiMessage] = useState<string>('');
-  const [loading, setLoading] = useState(true);
+  const [stops, setStops] = useState<Stop[]>([]);
 
-  useEffect(() => {
-    fetch('http://localhost:8000/')
-      .then(res => res.json())
-      .then(data => {
-        setApiMessage(data.message);
-        setLoading(false);
-      })
-      .catch(err => {
-        setApiMessage('Erreur de connexion au backend');
-        setLoading(false);
-      });
-  }, []);
+  const handleAddStop = (address: string) => {
+    const newStop: Stop = {
+      id: Date.now().toString(),
+      address,
+      order: stops.length + 1,
+    };
+    setStops([...stops, newStop]);
+  };
+
+  const handleRemoveStop = (id: string) => {
+    setStops(stops.filter(stop => stop.id !== id));
+  };
+
+  const handleOptimize = () => {
+    // TODO: Call backend API to optimize route
+    alert('🚀 Route optimization will be implemented in the next phase!');
+  };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
-      <main className="container mx-auto px-4 py-16">
-        <div className="max-w-4xl mx-auto text-center">
-          {/* Header */}
-          <div className="mb-12">
-            <h1 className="text-6xl font-bold text-gray-900 dark:text-white mb-4">
-              🚀 TFE Route App
-            </h1>
-            <p className="text-2xl text-gray-600 dark:text-gray-300">
-              Application Début - Next.js + FastAPI
-            </p>
-          </div>
+    <div className="relative h-screen w-screen overflow-hidden bg-[#0f1117]">
+      {/* Map - full viewport background */}
+      <MapContainer />
 
-          {/* Status Cards */}
-          <div className="grid md:grid-cols-2 gap-6 mb-12">
-            {/* Frontend Card */}
-            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 transform transition hover:scale-105">
-              <div className="text-5xl mb-4">⚛️</div>
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-                Frontend
-              </h2>
-              <p className="text-gray-600 dark:text-gray-300 mb-4">
-                Next.js + React + TypeScript
-              </p>
-              <div className="inline-block px-4 py-2 bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 rounded-full font-semibold">
-                ✓ Actif
-              </div>
-            </div>
-
-            {/* Backend Card */}
-            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 transform transition hover:scale-105">
-              <div className="text-5xl mb-4">🐍</div>
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-                Backend
-              </h2>
-              <p className="text-gray-600 dark:text-gray-300 mb-4">
-                FastAPI + Python
-              </p>
-              <div className={`inline-block px-4 py-2 rounded-full font-semibold ${
-                loading 
-                  ? 'bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200' 
-                  : apiMessage.includes('Erreur')
-                  ? 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200'
-                  : 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200'
-              }`}>
-                {loading ? '⏳ Connexion...' : apiMessage.includes('Erreur') ? '✗ Erreur' : '✓ Actif'}
-              </div>
+      {/* Centered UI shell */}
+      <div className="absolute inset-0 flex justify-center pointer-events-none">
+        <div className="relative w-full max-w-[480px] h-full pointer-events-auto">
+          {/* App Title - Top Center */}
+          <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20 pointer-events-none">
+            <div className="bg-[#1c1f2e]/90 backdrop-blur-md px-5 py-2.5 rounded-xl border border-gray-700/30 shadow-lg shadow-black/20">
+              <span className="text-white text-sm font-semibold tracking-tight">Route</span>
+              <span className="text-blue-400 text-sm font-semibold tracking-tight"> App</span>
             </div>
           </div>
 
-          {/* API Response */}
-          {!loading && (
-            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 mb-12">
-              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
-                📡 Réponse du Backend
-              </h3>
-              <div className="bg-gray-100 dark:bg-gray-900 rounded-lg p-6 font-mono text-left">
-                <code className="text-gray-800 dark:text-gray-200">
-                  {JSON.stringify({ message: apiMessage }, null, 2)}
-                </code>
-              </div>
-            </div>
-          )}
-
-          {/* Info Box */}
-          <div className="bg-blue-50 dark:bg-blue-900/30 border-2 border-blue-200 dark:border-blue-700 rounded-2xl p-8">
-            <h3 className="text-xl font-bold text-blue-900 dark:text-blue-100 mb-4">
-              🎉 Lapplication est lancée !
-            </h3>
-            <div className="text-left text-blue-800 dark:text-blue-200 space-y-2">
-              <p>✓ Frontend: <span className="font-mono">http://localhost:3000</span></p>
-              <p>✓ Backend API: <span className="font-mono">http://localhost:8000</span></p>
-              <p>✓ API Docs: <span className="font-mono">http://localhost:8000/docs</span></p>
-            </div>
+          {/* Map floating controls - inside centered shell */}
+          <div className="absolute bottom-52 right-4 z-10 flex flex-col gap-3">
+            <button
+              type="button"
+              aria-label="Center map on location"
+              className="press-effect w-11 h-11 bg-[#1c1f2e]/90 backdrop-blur-md rounded-xl shadow-lg shadow-black/20 flex items-center justify-center text-gray-400 hover:text-white hover:bg-[#252838] transition-colors border border-gray-700/30"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+            </button>
+            <button
+              type="button"
+              aria-label="My location"
+              className="press-effect w-11 h-11 bg-[#1c1f2e]/90 backdrop-blur-md rounded-xl shadow-lg shadow-black/20 flex items-center justify-center text-gray-400 hover:text-white hover:bg-[#252838] transition-colors border border-gray-700/30"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm8.94 3A8.994 8.994 0 0013 3.06V1h-2v2.06A8.994 8.994 0 003.06 11H1v2h2.06A8.994 8.994 0 0011 20.94V23h2v-2.06A8.994 8.994 0 0020.94 13H23v-2h-2.06z" />
+              </svg>
+            </button>
           </div>
+
+          {/* Bottom Panel with Stops */}
+          <BottomPanel stopsCount={stops.length} onOptimize={handleOptimize}>
+            <AddStopInput onAddStop={handleAddStop} />
+            <StopList stops={stops} onRemoveStop={handleRemoveStop} />
+          </BottomPanel>
         </div>
-      </main>
+      </div>
     </div>
   );
 }
+
