@@ -1,0 +1,336 @@
+@startuml Diagramme_Classes_TFE
+
+skinparam classAttributeIconSize 0
+skinparam classFontStyle Bold
+skinparam classFontSize 12
+skinparam classBackgroundColor #F8F9FA
+skinparam classBorderColor #343A40
+skinparam classArrowColor #222222
+skinparam classHeaderBackgroundColor #343A40
+skinparam classHeaderFontColor #FFFFFF
+skinparam linetype ortho
+skinparam nodesep 80
+skinparam ranksep 100
+
+' =========================================
+' ENUMERATIONS
+' =========================================
+
+enum Plan {
+  FREE
+  ' - max 20 arrêts
+  ' - historique 7 jours (avec compte uniquement)
+  ' - pas de MissionPro
+  STARTER
+  ' - max 50 arrêts
+  ' - historique 30 jours
+  ' - pas de MissionPro
+  PRO
+  ' - max 100 arrêts
+  ' - historique 1 an
+  ' - accès MissionPro
+}
+
+enum PlanPaye {
+  STARTER
+  ' 15,99 €/mois
+  PRO
+  ' 49,99 €/mois
+}
+
+enum ProviderAuth {
+  EMAIL
+  GOOGLE
+  PHONE
+}
+
+enum StatutTrajet {
+  EN_ATTENTE
+  EN_COURS
+  TERMINE
+}
+
+enum ModeOptimisation {
+  DISTANCE
+  ' Minimise les km parcourus
+  DUREE
+  ' Minimise le temps de trajet
+}
+
+enum TypeMission {
+  LIVRAISON
+  COLLECTE
+}
+
+enum StatutMission {
+  EN_ATTENTE
+  EN_COURS
+  TERMINE
+  PROBLEME
+}
+
+enum VehicleType {
+  PRIVATE
+  TAXI
+  MOTORCYCLE
+}
+
+enum GasType {
+  SUPER95
+  SUPER98
+  LPG
+  DIESEL
+  CNG
+}
+
+enum TypeNotification {
+  UPGRADE_PROMPT
+  ' Incitation à passer au plan supérieur
+  SAVE_PROMPT
+  ' Bandeau invitant à sauvegarder le trajet
+  INFO
+  ' Information générale
+}
+
+' =========================================
+' ENTITES
+' =========================================
+
+class SessionAnonyme {
+  + session_token : STRING <<PK>>
+  --
+  + trajets_temp : JSON
+  + created_at : TIMESTAMP
+  + expires_at : TIMESTAMP
+  --
+  + creerTrajetTemp() : void
+  + effacerSession() : void
+}
+
+note top of SessionAnonyme
+  Pas de persistance en base de données.
+  Stockée uniquement côté client (localStorage/cookie).
+  Expirée automatiquement à la fermeture de session.
+  <b>Aucun lien avec User</b> — données jamais envoyées au serveur.
+end note
+
+class User {
+  + id : UUID <<PK>>
+  --
+  + email : VARCHAR(255) <<UNIQUE, NULLABLE>>
+  + phone_number : VARCHAR(20) <<UNIQUE, NULLABLE>>
+  + provider : ProviderAuth
+  + plan : Plan
+  + created_at : TIMESTAMP
+  --
+  + seConnecter() : Session
+  + supprimerCompte() : void
+  + upgraderPlan(plan: Plan) : void
+}
+
+note top of User
+  Un utilisateur <b>anonyme</b> n'existe PAS en base.
+  Ses données sont dans <b>SessionAnonyme</b> (côté client).
+  Un compte est requis pour toute persistance serveur.
+  <b>plan = FREE par défaut</b> à la création du compte.
+end note
+
+class Subscription {
+  + id : UUID <<PK>>
+  --
+  + user_id : UUID <<FK → User.id, NOT NULL>>
+  + plan : PlanPaye
+  + start_date : TIMESTAMP
+  + end_date : TIMESTAMP <<NULLABLE>>
+  + active : BOOLEAN
+  --
+  + activer() : void
+  + resilier() : void
+  + estActif() : Boolean
+}
+
+note bottom of Subscription
+  N'existe que si User.plan = STARTER ou PRO.
+  Un User FREE n'a <b>aucune</b> Subscription.
+  end_date = NULL → abonnement en cours.
+end note
+
+class Notification {
+  + id : UUID <<PK>>
+  --
+  + user_id : UUID <<FK → User.id, NOT NULL>>
+  + type : TypeNotification
+  + message : TEXT
+  + lu : BOOLEAN
+  + created_at : TIMESTAMP
+  --
+  + marquerLu() : void
+  + supprimer() : void
+}
+
+note bottom of Notification
+  <b>UPGRADE_PROMPT</b> : affiché quand l'utilisateur
+  atteint la limite d'arrêts de son plan (RM-04).
+  <b>SAVE_PROMPT</b> : bandeau invitant à s'inscrire
+  pour sauvegarder le trajet en cours.
+end note
+
+class Trajet {
+  + id : UUID <<PK>>
+  --
+  + user_id : UUID <<FK → User.id, NOT NULL>>
+  + nom : VARCHAR(100)
+  + statut : StatutTrajet
+  + mode_optimisation : ModeOptimisation <<NULLABLE>>
+  + distance_totale : FLOAT <<NULLABLE>>
+  + duree_estimee : INTEGER <<NULLABLE>>
+  + created_at : TIMESTAMP
+  + optimise_le : TIMESTAMP <<NULLABLE>>
+  --
+  + sauvegarder() : void
+  + optimiser(mode: ModeOptimisation) : void
+  + annulerOptimisation() : void
+  + supprimer() : void
+  + demarrerTournee() : void
+}
+
+note bottom of Trajet
+  <b>RM-06</b> : l'optimisation ne modifie pas le point de départ
+  <b>RM-03</b> : un trajet en base appartient toujours à un User
+  <b>RM-10</b> : user_id ne peut jamais être NULL
+  <b>mode_optimisation</b> : DISTANCE ou DUREE (section 7.3 CDC)
+  <b>annulerOptimisation()</b> : restaure via HistoriqueOptimisation
+end note
+
+class HistoriqueOptimisation {
+  + id : UUID <<PK>>
+  --
+  + trajet_id : UUID <<FK → Trajet.id, NOT NULL>>
+  + ordre_avant : JSON
+  + ordre_apres : JSON
+  + mode_utilise : ModeOptimisation
+  + created_at : TIMESTAMP
+  --
+  + restaurerOrdreAvant() : void
+}
+
+note bottom of HistoriqueOptimisation
+  Permet le retour arrière après optimisation (section 7.3).
+  <b>ordre_avant</b> : tableau JSON des IDs d'arrêts avant optimisation.
+  <b>ordre_apres</b> : tableau JSON des IDs d'arrêts après optimisation.
+  Chaque optimisation crée une nouvelle entrée.
+end note
+
+class Arret {
+  + id : UUID <<PK>>
+  --
+  + trajet_id : UUID <<FK → Trajet.id, NOT NULL>>
+  + adresse : VARCHAR(255)
+  + lat : FLOAT
+  + lng : FLOAT
+  + ordre : INTEGER
+  + is_depart : BOOLEAN
+  + statut_confirmation : BOOLEAN
+  + created_at : TIMESTAMP
+  --
+  + modifier(adresse: String) : void
+  + supprimer() : void
+  + confirmer() : void
+  + geocoder() : Coordinates
+}
+
+note bottom of Arret
+  <b>RM-01</b> : min. 2 arrêts pour déclencher l'optimisation
+  <b>RM-02</b> : adresse doit être géocodée (lat/lng obligatoires)
+  <b>RM-07</b> : statut_confirmation irréversible (true = définitif)
+  <b>RM-04</b> : max arrêts selon plan → FREE:20 / STARTER:50 / PRO:100
+  <b>is_depart = true</b> : cet arrêt est le point de départ fixe (RM-06)
+end note
+
+class MissionPro {
+  + id : UUID <<PK>>
+  --
+  + arret_id : UUID <<FK → Arret.id, NOT NULL, UNIQUE>>
+  + nom_client : VARCHAR(100) <<NULLABLE>>
+  + type_mission : TypeMission
+  + nb_colis : INTEGER <<NULLABLE>>
+  + id_colis : VARCHAR(100) <<NULLABLE>>
+  + instructions_acces : TEXT <<NULLABLE>>
+  + duree_estimee : INTEGER <<NULLABLE>>
+  + heure_prevue : TIME <<NULLABLE>>
+  + statut : StatutMission
+  --
+  + modifierStatut(statut: StatutMission) : void
+  + consulterDetails() : MissionPro
+}
+
+note bottom of MissionPro
+  <b>RM-05</b> : visible et accessible uniquement si User.plan = PRO
+  Relation 1-1 stricte avec Arret (UNIQUE sur arret_id)
+end note
+
+class Settings {
+  + id : UUID <<PK>>
+  --
+  + user_id : UUID <<FK → User.id, NOT NULL>>
+  + avoid_tolls : BOOLEAN
+  + stop_duration : INTEGER
+  + stop_side : VARCHAR(20)
+  + vehicle_details_id : UUID <<FK → VehicleDetails.id>>
+  --
+  + modifier() : void
+  + reinitialiser() : void
+}
+
+class VehicleDetails {
+  + id : UUID <<PK>>
+  --
+  + vehicle_type : VehicleType
+  + preferred_gas_type : GasType
+  --
+  + modifier() : void
+}
+
+note bottom of VehicleDetails
+  Détails du véhicule utilisés par OpenRouteService
+  pour le calcul des itinéraires optimisés.
+  Lié 1-1 à Settings.
+end note
+
+' =========================================
+' RELATIONS AVEC CARDINALITES VISIBLES
+' =========================================
+
+User "1" *-[#E63946]-> "0..*" Trajet : possède\n(user_id)
+
+Trajet "1" *-[#E63946]-> "2..*" Arret : contient\n(trajet_id)
+
+Trajet "1" -[#E63946]-> "0..*" HistoriqueOptimisation : historise\n(trajet_id)
+
+Arret "1" o-[#E63946]-> "0..1" MissionPro : possède\n(arret_id)\n[Plan PRO uniquement]
+
+User "1" *-[#E63946]-> "1" Settings : configure\n(user_id)
+
+Settings "1" *-[#E63946]-> "1" VehicleDetails : détaille\n(vehicle_details_id)
+
+User "1" -[#E63946]-> "0..1" Subscription : souscrit\n[STARTER ou PRO uniquement]
+
+User "1" -[#E63946]-> "0..*" Notification : reçoit\n(user_id)
+
+' =========================================
+' LIENS ENUMERATIONS
+' =========================================
+
+User ..> Plan                    : plan
+User ..> ProviderAuth            : provider
+Trajet ..> StatutTrajet          : statut
+Trajet ..> ModeOptimisation      : mode_optimisation
+HistoriqueOptimisation ..> ModeOptimisation : mode_utilise
+MissionPro ..> TypeMission       : type_mission
+MissionPro ..> StatutMission     : statut
+Subscription ..> PlanPaye        : plan
+VehicleDetails ..> VehicleType   : vehicle_type
+VehicleDetails ..> GasType       : preferred_gas_type
+Notification ..> TypeNotification : type
+
+@enduml
