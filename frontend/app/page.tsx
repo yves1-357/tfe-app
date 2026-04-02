@@ -5,10 +5,12 @@ import MapContainer from '@/components/MapContainer';
 import BottomPanel from '@/components/BottomPanel';
 import StopList from '@/components/StopList';
 import AddStopInput from '@/components/AddStopInput';
+import SideMenu from '@/components/SideMenu';
 import { Stop } from '@/types';
 
 export default function Home() {
   const [stops, setStops] = useState<Stop[]>([]);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   const handleAddStop = (address: string) => {
     const newStop: Stop = {
@@ -33,45 +35,49 @@ export default function Home() {
       {/* Map - full viewport background */}
       <MapContainer />
 
+      {/* Hamburger Menu Button - Fixed Top Left */}
+      <button
+        type="button"
+        onClick={() => setMenuOpen(true)}
+        className="fixed top-4 left-4 z-30 w-10 h-10 bg-gray-900/50 backdrop-blur-2xl border border-white/10 rounded-xl shadow-lg flex items-center justify-center text-white hover:bg-gray-800/60 transition"
+        aria-label="Open menu"
+        style={{
+          background: 'linear-gradient(to bottom, rgba(17, 24, 39, 0.4), rgba(17, 24, 39, 0.6))',
+        }}
+      >
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+        </svg>
+      </button>
+
+      {/* Side Menu */}
+      <SideMenu isOpen={menuOpen} onClose={() => setMenuOpen(false)} />
+
+      {/* Bottom Panel - Next to Hamburger */}
+      <div className="fixed top-4 left-20 z-20 w-[400px] max-w-[calc(100vw-6rem)]">
+        <BottomPanel stopsCount={stops.length} onOptimize={handleOptimize}>
+          <AddStopInput onAddStop={handleAddStop} />
+          <StopList stops={stops} onRemoveStop={handleRemoveStop} />
+        </BottomPanel>
+      </div>
+
       {/* Centered UI shell */}
       <div className="absolute inset-0 flex justify-center pointer-events-none">
         <div className="relative w-full max-w-[480px] h-full pointer-events-auto">
+
           {/* App Title - Top Center */}
           <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20 pointer-events-none">
-            <div className="bg-[#1c1f2e]/90 backdrop-blur-md px-5 py-2.5 rounded-xl border border-gray-700/30 shadow-lg shadow-black/20">
-              <span className="text-white text-sm font-semibold tracking-tight">Route</span>
-              <span className="text-blue-400 text-sm font-semibold tracking-tight"> App</span>
+            <div className="  px-5 py-2.5   border-gray-700/30 ">
+              <span className="text-white text-sm font-semibold tracking-tight">Next</span>
+              <span className="text-blue-400 text-sm font-semibold tracking-tight">Stop</span>
             </div>
           </div>
 
           {/* Map floating controls - inside centered shell */}
           <div className="absolute bottom-52 right-4 z-10 flex flex-col gap-3">
-            <button
-              type="button"
-              aria-label="Center map on location"
-              className="press-effect w-11 h-11 bg-[#1c1f2e]/90 backdrop-blur-md rounded-xl shadow-lg shadow-black/20 flex items-center justify-center text-gray-400 hover:text-white hover:bg-[#252838] transition-colors border border-gray-700/30"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-              </svg>
-            </button>
-            <button
-              type="button"
-              aria-label="My location"
-              className="press-effect w-11 h-11 bg-[#1c1f2e]/90 backdrop-blur-md rounded-xl shadow-lg shadow-black/20 flex items-center justify-center text-gray-400 hover:text-white hover:bg-[#252838] transition-colors border border-gray-700/30"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm8.94 3A8.994 8.994 0 0013 3.06V1h-2v2.06A8.994 8.994 0 003.06 11H1v2h2.06A8.994 8.994 0 0011 20.94V23h2v-2.06A8.994 8.994 0 0020.94 13H23v-2h-2.06z" />
-              </svg>
-            </button>
+         
+          
           </div>
-
-          {/* Bottom Panel with Stops */}
-          <BottomPanel stopsCount={stops.length} onOptimize={handleOptimize}>
-            <AddStopInput onAddStop={handleAddStop} />
-            <StopList stops={stops} onRemoveStop={handleRemoveStop} />
-          </BottomPanel>
         </div>
       </div>
     </div>
