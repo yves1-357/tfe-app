@@ -9,22 +9,16 @@ interface BottomPanelProps {
 }
 
 export default function BottomPanel({ children, stopsCount, onOptimize }: BottomPanelProps) {
-  const [isExpanded, setIsExpanded] = useState(false);
-  const [showInput, setShowInput] = useState(false);
+  const [isExpandedState, setIsExpanded] = useState(false);
+  const [showInputState, setShowInput] = useState(false);
   const [dragOffset, setDragOffset] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const startY = useRef(0);
   const panelRef = useRef<HTMLDivElement>(null);
 
-  // Auto-hide input when no stops
-  useEffect(() => {
-    if (stopsCount === 0) {
-      setShowInput(false);
-      setIsExpanded(false);
-    } else {
-      setShowInput(true);
-    }
-  }, [stopsCount]);
+  // Derived state - no useEffect needed
+  const showInput = stopsCount > 0 ? true : showInputState;
+  const isExpanded = stopsCount === 0 ? false : isExpandedState;
 
   const handleDragStart = useCallback((clientY: number) => {
     startY.current = clientY;
