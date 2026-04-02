@@ -12,35 +12,19 @@ export default function StopList({ stops, onRemoveStop }: StopListProps) {
     return null;
   }
 
-  const getColor = (index: number) => {
-    if (index === 0) return '#22c55e';
-    if (index === stops.length - 1) return '#ef4444';
-    return '#3b82f6';
-  };
-
   return (
-    <div className="space-y-3">
-      {stops.map((stop, index) => (
+    <div className="flex flex-col">
+      {stops.map((stop) => (
         <div
           key={stop.id}
-          className="flex items-center gap-3 bg-[#1e2130] border border-gray-700/20 rounded-xl p-3 hover:bg-[#252838] transition-colors group"
+          className="flex items-center gap-3 py-2.5 group"
         >
-          {/* Order indicator */}
-          <div
-            className="flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center text-white font-semibold text-xs shadow-sm"
-            style={{ backgroundColor: getColor(index) }}
-          >
-            {String.fromCharCode(65 + index)}
-          </div>
-
-          {/* Connector line */}
-          {index < stops.length - 1 && (
-            <div className="absolute left-[2.05rem] top-[2.75rem] w-px h-4 bg-gray-700/40" />
-          )}
+          {/* Bullet */}
+          <div className="flex-shrink-0 w-2 h-2 rounded-full bg-blue-400 ml-1" />
 
           {/* Address */}
           <div className="flex-1 min-w-0">
-            <p className="text-white text-sm font-medium truncate">{stop.address}</p>
+            <p className="text-gray-200 text-sm truncate">{stop.address}</p>
           </div>
 
           {/* Remove button */}
