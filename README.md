@@ -1,4 +1,4 @@
-# TFE Route App
+# NextStop App
 
 Application fullstack avec Next.js (frontend) et FastAPI (backend).
 
@@ -12,7 +12,7 @@ tfe-route-app/
 └── package.json    # Configuration globale
 ```
 
-## Installation (première fois uniquement)
+## Installation 
 
 ### Backend (FastAPI)
 ```bash
@@ -30,11 +30,11 @@ npm install
 cd ..
 ```
 
-## Démarrage rapide - UNE SEULE COMMANDE 🚀
+## Démarrage rapide - Une Seule commande
 
 Depuis la racine du projet :
 
-### Option 1 - Via npm (recommandé)
+### Option 1 - Via npm
 ```bash
 npm run dev
 ```
@@ -45,8 +45,8 @@ npm run dev
 ```
 
 Cette commande lance automatiquement :
-- ✅ Backend FastAPI sur http://localhost:8000
-- ✅ Frontend Next.js sur http://localhost:3000
+- Backend FastAPI sur http://localhost:8000
+- Frontend Next.js sur http://localhost:3000
 
 Pour arrêter : `Ctrl+C`
 
