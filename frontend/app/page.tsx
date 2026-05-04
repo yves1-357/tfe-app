@@ -25,6 +25,7 @@ export default function Home() {
     setStops(stops.filter(stop => stop.id !== id));
   };
 
+  // TODO: Implement optimize route / a revoir plu tard 
   const handleOptimize = () => {
     // TODO: Call backend API to optimize route
     alert('🚀 Route optimization will be implemented in the next phase!');
