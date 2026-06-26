@@ -32,7 +32,7 @@ export default function Home() {
   };
 
   return (
-    <div className="relative h-screen w-screen overflow-hidden bg-[#0f1117]">
+    <div className="relative h-screen w-screen overflow-hidden">
       {/* Map - full viewport background */}
       <MapContainer />
 
@@ -40,46 +40,31 @@ export default function Home() {
       <button
         type="button"
         onClick={() => setMenuOpen(true)}
-        className="fixed top-4 left-4 z-30 w-10 h-10 bg-gray-900/50 backdrop-blur-2xl border border-white/10 rounded-xl shadow-lg flex items-center justify-center text-white hover:bg-gray-800/60 transition"
+        className="press-effect glass hover-surface fixed top-4 left-4 z-30 w-11 h-11 rounded-2xl flex items-center justify-center text-1"
         aria-label="Open menu"
-        style={{
-          background: 'linear-gradient(to bottom, rgba(17, 24, 39, 0.4), rgba(17, 24, 39, 0.6))',
-        }}
       >
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
         </svg>
       </button>
 
+      {/* Brand - Top Center (frameless) */}
+      <div className="fixed top-4 left-1/2 -translate-x-1/2 z-30 pointer-events-none">
+        <div className="px-2 py-1">
+          <span className="lg-text text-1 text-base font-bold tracking-tight">Next</span>
+          <span className="lg-text text-blue-400 text-base font-bold tracking-tight">Stop</span>
+        </div>
+      </div>
+
       {/* Side Menu */}
       <SideMenu isOpen={menuOpen} onClose={() => setMenuOpen(false)} />
 
-      {/* Bottom Panel - Next to Hamburger */}
-      <div className="fixed top-4 left-20 z-20 w-[400px] max-w-[calc(100vw-6rem)]">
+      {/* Floating panel - top-left on desktop, bottom sheet on mobile */}
+      <div className="fixed z-20 left-1/2 -translate-x-1/2 bottom-4 w-[calc(100vw-1.5rem)] max-w-[420px] sm:left-20 sm:translate-x-0 sm:top-4 sm:bottom-auto">
         <BottomPanel stopsCount={stops.length} onOptimize={handleOptimize}>
           <AddStopInput onAddStop={handleAddStop} />
           <StopList stops={stops} onRemoveStop={handleRemoveStop} />
         </BottomPanel>
-      </div>
-
-      {/* Centered UI shell */}
-      <div className="absolute inset-0 flex justify-center pointer-events-none">
-        <div className="relative w-full max-w-[480px] h-full pointer-events-auto">
-
-          {/* App Title - Top Center */}
-          <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20 pointer-events-none">
-            <div className="  px-5 py-2.5   border-gray-700/30 ">
-              <span className="text-white text-sm font-semibold tracking-tight">Next</span>
-              <span className="text-blue-400 text-sm font-semibold tracking-tight">Stop</span>
-            </div>
-          </div>
-
-          {/* Map floating controls - inside centered shell */}
-          <div className="absolute bottom-52 right-4 z-10 flex flex-col gap-3">
-         
-          
-          </div>
-        </div>
       </div>
     </div>
   );
