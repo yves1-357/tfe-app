@@ -1,14 +1,66 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.theme-dark, .theme-dark *));
+
 @theme inline {
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
   --color-blue-550: #3b7dff;
 }
 
-* {
-  margin: 0;
-  padding: 0;
+/* ============================================================
+   THEME TOKENS
+   ============================================================ */
+:root,
+.theme-dark {
+  color-scheme: dark;
+  --app-bg: #0b0e14;
+  --map-bg: #11151f;
+  --map-line: rgba(255, 255, 255, 0.06);
+  --map-line-strong: rgba(255, 255, 255, 0.14);
+  --map-glow-a: rgba(59, 130, 246, 0.10);
+  --map-glow-b: rgba(16, 185, 129, 0.07);
+  --surface-1: rgba(22, 28, 41, 0.94);
+  --surface-2: rgba(32, 39, 55, 0.85);
+  --surface-input: rgba(255, 255, 255, 0.06);
+  --surface-border: rgba(255, 255, 255, 0.10);
+  --text-1: #f4f6f8;
+  --text-2: #9aa3b2;
+  --text-3: #6b7280;
+  --hover: rgba(255, 255, 255, 0.07);
+  --vignette: rgba(0, 0, 0, 0.12);
+  /* liquid glass */
+  --lg-bg: linear-gradient(135deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.02));
+  --lg-border: rgba(255, 255, 255, 0.12);
+  --lg-highlight: rgba(255, 255, 255, 0.22);
+  --lg-shadow: rgba(0, 0, 0, 0.40);
+}
+
+.theme-light {
+  color-scheme: light;
+  --app-bg: #e9edf2;
+  --map-bg: #e7ebf1;
+  --map-line: rgba(0, 0, 0, 0.07);
+  --map-line-strong: rgba(0, 0, 0, 0.14);
+  --map-glow-a: rgba(59, 130, 246, 0.10);
+  --map-glow-b: rgba(16, 185, 129, 0.10);
+  --surface-1: rgba(255, 255, 255, 0.96);
+  --surface-2: rgba(244, 247, 250, 0.95);
+  --surface-input: rgba(0, 0, 0, 0.04);
+  --surface-border: rgba(0, 0, 0, 0.08);
+  --text-1: #0f172a;
+  --text-2: #475569;
+  --text-3: #94a3b8;
+  --hover: rgba(0, 0, 0, 0.05);
+  --vignette: rgba(0, 0, 0, 0.04);
+  /* liquid glass */
+  --lg-bg: linear-gradient(135deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0.10));
+  --lg-border: rgba(255, 255, 255, 0.70);
+  --lg-highlight: rgba(255, 255, 255, 0.95);
+  --lg-shadow: rgba(15, 23, 42, 0.18);
+}
+
+*, *::before, *::after {
   box-sizing: border-box;
   -webkit-tap-highlight-color: transparent;
 }
@@ -21,12 +73,49 @@ body {
 
 body {
   font-family: var(--font-sans), system-ui, -apple-system, sans-serif;
-  background: #0f1117;
+  background: var(--app-bg);
+  color: var(--text-1);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-/* Custom scrollbar dark mode */
+/* ============================================================
+   SEMANTIC HELPERS (theme-aware)
+   ============================================================ */
+.text-1 { color: var(--text-1); }
+.text-2 { color: var(--text-2); }
+.text-3 { color: var(--text-3); }
+.hover-surface { transition: background-color 0.15s ease; }
+.hover-surface:hover { background: var(--hover); }
+.border-token { border-color: var(--surface-border); }
+.input-surface {
+  background: var(--surface-input);
+  border: 1px solid var(--surface-border);
+}
+
+/* Kill the blue Chrome/Edge autofill background */
+.no-autofill:-webkit-autofill,
+.no-autofill:-webkit-autofill:hover,
+.no-autofill:-webkit-autofill:focus,
+.no-autofill:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 1000px transparent inset !important;
+  box-shadow: 0 0 0 1000px transparent inset !important;
+  -webkit-text-fill-color: var(--text-1) !important;
+  transition: background-color 9999s ease-out 0s;
+  caret-color: var(--text-1);
+}
+.drag-handle {
+  background: var(--text-3);
+  opacity: 0.6;
+}
+
+/* ============================================================
+   SCROLLBAR
+   ============================================================ */
 ::-webkit-scrollbar {
-  width: 4px;
+  width: 5px;
+  height: 5px;
 }
 
 ::-webkit-scrollbar-track {
@@ -34,44 +123,171 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #3a3f4b;
-  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #4a5060;
+  background: rgba(255, 255, 255, 0.22);
 }
 
-/* Smooth bottom sheet transitions */
-.bottom-sheet-transition {
-  transition: transform 0.35s cubic-bezier(0.32, 0.72, 0, 1);
+/* ============================================================
+   GLASS SURFACES (liquid glass, theme-aware)
+   ============================================================ */
+.glass {
+  background: var(--lg-bg);
+  -webkit-backdrop-filter: blur(40px) saturate(180%);
+  backdrop-filter: blur(40px) saturate(180%);
+  border: 0;
+  box-shadow: none;
+  /* Radial feather so the edge dissolves into the map (no rectangular boundary) */
+  -webkit-mask-image: radial-gradient(ellipse 110% 130% at 50% 50%, #000 60%, transparent 100%);
+  mask-image: radial-gradient(ellipse 110% 130% at 50% 50%, #000 60%, transparent 100%);
 }
 
-/* Pulse animation for empty state */
+/* Glass background layer: placed BEHIND the content as a separate sibling,
+   slightly larger than the content box so its feathered edge falls outside
+   the visible area — no rectangular boundary around the panel. */
+.glass-bg {
+  background: var(--lg-bg);
+  -webkit-backdrop-filter: blur(40px) saturate(180%);
+  backdrop-filter: blur(40px) saturate(180%);
+  -webkit-mask-image: radial-gradient(ellipse 95% 95% at 50% 50%, #000 55%, transparent 100%);
+  mask-image: radial-gradient(ellipse 95% 95% at 50% 50%, #000 55%, transparent 100%);
+}
+
+.glass-soft {
+  background: var(--surface-2);
+  -webkit-backdrop-filter: blur(16px) saturate(150%);
+  backdrop-filter: blur(16px) saturate(150%);
+  border: 1px solid var(--surface-border);
+}
+
+.glass-menu {
+  background: var(--lg-bg);
+  -webkit-backdrop-filter: blur(34px) saturate(185%);
+  backdrop-filter: blur(34px) saturate(185%);
+  border-right: 1px solid var(--lg-border);
+  box-shadow:
+    inset 1px 0 0 var(--lg-highlight),
+    0 8px 40px var(--lg-shadow);
+}
+
+/* Subtle text shadow to keep labels crisp over translucent glass */
+.lg-text {
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.25);
+}
+.theme-light .lg-text {
+  text-shadow: 0 1px 6px rgba(255, 255, 255, 0.5);
+}
+
+/* ============================================================
+   ANIMATIONS
+   ============================================================ */
 @keyframes subtle-pulse {
-  0%, 100% { opacity: 0.6; }
-  50% { opacity: 1; }
+  0%, 100% { opacity: 0.55; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.04); }
 }
 
 .animate-subtle-pulse {
-  animation: subtle-pulse 3s ease-in-out infinite;
+  animation: subtle-pulse 3.2s ease-in-out infinite;
 }
 
-/* Map grid pattern */
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes slide-in-row {
+  from { opacity: 0; transform: translateX(-10px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+.animate-row {
+  animation: slide-in-row 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes map-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+.animate-map-float {
+  animation: map-float 5s ease-in-out infinite;
+}
+
+/* ============================================================
+   TRANSITIONS / EFFECTS
+   ============================================================ */
+.spring {
+  transition: transform 0.42s cubic-bezier(0.32, 0.72, 0, 1),
+    height 0.42s cubic-bezier(0.32, 0.72, 0, 1),
+    opacity 0.3s ease;
+}
+
+.press-effect {
+  transition: transform 0.12s ease;
+}
+.press-effect:active {
+  transform: scale(0.96);
+}
+
+/* Soft elevation for floating cards */
+.elevate {
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.3),
+    0 8px 30px rgba(0, 0, 0, 0.45);
+}
+
+.elevate-lg {
+  box-shadow:
+    0 2px 6px rgba(0, 0, 0, 0.35),
+    0 18px 50px rgba(0, 0, 0, 0.55);
+}
+
+/* ============================================================
+   FAUX MAP BACKGROUND (dot grid, theme-aware, perfectly uniform)
+   ============================================================ */
+.map-canvas {
+  background-color: var(--map-bg);
+  background-image:
+    /* large accent dots */
+    radial-gradient(circle at 1px 1px, var(--map-line-strong) 1.5px, transparent 1.5px),
+    /* fine dots */
+    radial-gradient(circle at 1px 1px, var(--map-line) 1px, transparent 1px);
+  background-size:
+    96px 96px,
+    24px 24px;
+  transition: background-color 0.3s ease;
+}
+
+/* Faint diagonal "avenues" overlay */
+.map-roads {
+  background-image:
+    repeating-linear-gradient(
+      35deg,
+      transparent 0,
+      transparent 118px,
+      var(--map-line) 118px,
+      var(--map-line) 124px
+    ),
+    repeating-linear-gradient(
+      -22deg,
+      transparent 0,
+      transparent 160px,
+      var(--map-line) 160px,
+      var(--map-line) 165px
+    );
+}
+
+/* Keep legacy grid alias */
 .map-grid {
   background-image:
-    linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+    linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
   background-size: 40px 40px;
-}
-
-/* Gradient overlay for bottom panel */
-.bottom-panel-gradient {
-  background: linear-gradient(to bottom, #12141c 0%, #161923 100%);
-}
-
-/* Active button press effect */
-.press-effect:active {
-  transform: scale(0.97);
-  transition: transform 0.1s;
 }
