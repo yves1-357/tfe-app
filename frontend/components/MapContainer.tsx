@@ -1,8 +1,9 @@
 'use client';
 
-import { APIProvider, Map, Marker, useMap } from '@vis.gl/react-google-maps';
+import { Map, Marker, useMap } from '@vis.gl/react-google-maps';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTheme } from './ThemeProvider';
+import type { Stop } from '@/types';
 
 const BRUSSELS_CENTER = { lat: 50.8503, lng: 4.3517 };
 const DEFAULT_ZOOM = 12;
@@ -168,36 +169,39 @@ function MapController({ location, status, onRetry }: MapControllerProps) {
   );
 }
 
-export default function MapContainer() {
-  const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+interface MapContainerProps {
+  stops?: Stop[];
+}
+
+export default function MapContainer({ stops = [] }: MapContainerProps) {
   const { isDark } = useTheme();
   const { location, status, retry } = useUserLocation();
 
-  if (!apiKey) {
-    return (
-      <div className="absolute inset-0 flex items-center justify-center text-sm text-red-500">
-        NEXT_PUBLIC_GOOGLE_MAPS_API_KEY manquante dans frontend/.env.local
-      </div>
-    );
-  }
-
   return (
     <div className="absolute inset-0">
-      <APIProvider apiKey={apiKey}>
-        <Map
-          defaultCenter={BRUSSELS_CENTER}
-          defaultZoom={DEFAULT_ZOOM}
-          gestureHandling="greedy"
-          disableDefaultUI
-          colorScheme={isDark ? 'DARK' : 'LIGHT'}
-          className="w-full h-full"
-        >
-          {location && (
-            <Marker position={location} icon={USER_DOT_SVG} title="Vous êtes ici" />
-          )}
-        </Map>
-        <MapController location={location} status={status} onRetry={retry} />
-      </APIProvider>
+      <Map
+        defaultCenter={BRUSSELS_CENTER}
+        defaultZoom={DEFAULT_ZOOM}
+        gestureHandling="greedy"
+        disableDefaultUI
+        colorScheme={isDark ? 'DARK' : 'LIGHT'}
+        className="w-full h-full"
+      >
+        {location && (
+          <Marker position={location} icon={USER_DOT_SVG} title="Vous êtes ici" />
+        )}
+        {stops.map((stop) =>
+          stop.lat !== undefined && stop.lng !== undefined ? (
+            <Marker
+              key={stop.id}
+              position={{ lat: stop.lat, lng: stop.lng }}
+              label={{ text: String(stop.order), color: 'white', fontWeight: 'bold', fontSize: '12px' }}
+              title={stop.address}
+            />
+          ) : null
+        )}
+      </Map>
+      <MapController location={location} status={status} onRetry={retry} />
 
       {status === 'loading' && (
         <div className="absolute top-4 left-1/2 -translate-x-1/2 glass-soft px-3 py-1.5 rounded-full text-xs text-2 z-10">
