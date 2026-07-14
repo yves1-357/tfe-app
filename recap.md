@@ -66,12 +66,92 @@ Fichier passé de **19 lignes (placeholder pointillé)** à **~180 lignes** avec
 
 ---
 
-## 🗓️ Semaine 2 — 14 → 20 juillet 2026 *(à venir)*
+## 🗓️ Semaine 2 — 14 → 20 juillet 2026
 
-- Autocomplete d'adresses via Places API dans `AddStopInput.tsx`
-- Type `Stop` étendu avec `lat`, `lng`, `placeId`
-- Markers sur la carte pour chaque stop ajouté
+**Thème** : Autocomplete Places API + markers stops + polish UI dropdown
 
-*(Sera rempli à la fin de la semaine 2.)*
+### ✅ Fait
+
+#### Refactoring architectural — `APIProvider` remonté dans `page.tsx` (14 juillet)
+- `APIProvider` déplacé de `MapContainer.tsx` vers `page.tsx` pour que `AddStopInput` puisse utiliser `useMapsLibrary` (hook qui nécessite un `APIProvider` ancêtre)
+- Check `!apiKey` déplacé dans `page.tsx` → message d'erreur clair si `.env.local` manquant
+- `MapContainer` n'est plus responsable de la clé API, reçoit uniquement les données à afficher
+
+#### Extension du type `Stop` — `types/index.ts` (14 juillet)
+Trois champs ajoutés (optionnels pour rétrocompatibilité) :
+```ts
+lat?: number;
+lng?: number;
+placeId?: string;
+```
+
+#### Réécriture complète `AddStopInput.tsx` — autocomplete Google Places (14 juillet)
+Passage d'un simple `<input>` texte à un vrai autocomplete :
+- **`useMapsLibrary('places')`** charge la lib Places à la demande (lazy, pas de surcharge initiale)
+- **`new places.Autocomplete(inputRef.current, { fields: [...], types: [...] })`** attaché à l'input natif
+- **Location bias 10 km** : `navigator.geolocation.getCurrentPosition` avec `maximumAge: 300_000` (utilise la position déjà en cache depuis `MapContainer`) → `ac.setBounds(circle.getBounds())` → résultats locaux prioritaires (ex : McDonald's de Corbais avant ceux de Bruxelles)
+- **Fallback** : si géoloc refusée → bounding box Belgique entière (SW: 49.5/2.5 — NE: 51.5/6.4)
+- **`onAddStopRef`** (useRef stable) : évite de recréer l'instance `Autocomplete` à chaque re-render quand le callback parent change
+- **`/// <reference types="@types/google.maps" />`** en tête de fichier : résout le namespace global `google.maps` sous TypeScript strict + `moduleResolution: bundler`
+- À la sélection : `onAddStop({ address, lat, lng, placeId })` + reset automatique de l'input
+- Bouton "Add" supprimé — l'action est déclenchée par la sélection dans le dropdown uniquement
+
+#### Refonte `handleAddStop` et `handleRemoveStop` — `page.tsx` (14 juillet)
+- **`handleAddStop`** : reçoit maintenant `{ address, lat, lng, placeId }` (complet) au lieu d'une string
+- **`handleRemoveStop`** : après filtre, les `order` sont réindexés via `.map((stop, i) => ({ ...stop, order: i + 1 }))` → numérotation toujours consécutive même après suppression d'un stop intermédiaire
+
+#### Markers des stops sur la carte — `MapContainer.tsx` (14 juillet)
+- Prop `stops?: Stop[]` ajoutée (défaut `[]`)
+- Pour chaque stop ayant `lat` et `lng` définis → `<Marker>` avec `label={{ text: String(stop.order), color: 'white', fontWeight: 'bold' }}` et `title={stop.address}`
+- Distinction visuelle avec le marker de position utilisateur (point bleu SVG)
+
+#### Stylisation du dropdown Google Places — `globals.css` (14 juillet)
+Google injecte `.pac-container` dans `<body>` après le chargement de notre CSS → `!important` requis sur les propriétés clés :
+- **Container** : `background-color: var(--surface-1)`, `backdrop-filter: blur(20px)`, `border-radius: 16px`, shadow multicouche
+- **Items** : hover `var(--hover)`, `border-top: none`, coins arrondis 10px, transition douce
+- **Texte** : primaire `var(--text-1)`, secondaire `var(--text-2)` 12px, matched `#3b7dff` gras
+- **Icône pin** : `filter: brightness(0) invert(1)` en dark mode → rendu blanc
+- **"Powered by Google"** : conservé (obligations ToS Google) mais semi-transparent
+- Suit automatiquement le dark/light mode via les CSS variables de `:root` → aucune duplication de règles
+
+#### Installation `@types/google.maps` (14 juillet)
+- Ajouté en `devDependency` pour résoudre les erreurs TypeScript sur le namespace `google.maps.*` utilisé directement dans `AddStopInput.tsx`
+
+### 🔧 Fichiers modifiés / créés
+
+| Fichier | État | Description |
+|---|---|---|
+| `frontend/types/index.ts` | ✏️ | `Stop` + `lat?`, `lng?`, `placeId?` |
+| `frontend/app/page.tsx` | ✏️ | `APIProvider` remonté, `handleAddStop`/`handleRemoveStop` refactorisés, `stops` passé à `MapContainer` |
+| `frontend/components/AddStopInput.tsx` | ♻️ refonte totale | Autocomplete Places + location bias 10km |
+| `frontend/components/MapContainer.tsx` | ✏️ | `APIProvider` retiré, prop `stops`, markers numérotés |
+| `frontend/app/globals.css` | ✏️ | Section `.pac-container` overrides dark/light |
+| `frontend/package.json` | ✏️ | +1 devDep : `@types/google.maps` |
+
+### 📝 Warnings / points d'attention
+
+- **`setBounds` = biais doux** : le rayon de 10km priorise les résultats locaux mais ne les restreint pas. Taper "mcdo bruxelles" retourne Bruxelles normalement. Rayon réduit de 50km → 10km après tests (Brussels ~25km était encore visible avec 50km).
+- **`google.maps.Marker` deprecated** (warning console, non bloquant) : migration vers `AdvancedMarkerElement` planifiée en S8.
+- **`APIProvider` dans `page.tsx`** : breaking change architectural. Si un composant futur a besoin de Google Maps hors de `page.tsx` (ex: dans un layout), il faudra remonter encore plus haut ou dupliquer.
+
+---
+
+## 🗓️ Semaine 3 — 21 → 27 juillet 2026 *(à venir)*
+
+**Thème** : Refactor backend + analyse des besoins (écrit)
+
+### 🎯 Objectifs dev
+
+- Créer `backend/config.py` (chargement `.env` via `python-dotenv`)
+- Créer `backend/schemas.py` (Pydantic : `StopIn`, `OptimizeRequest` max 25 stops, `OptimizeResponse`, `UserCreate`)
+- Créer `backend/services/google_maps.py` (squelette)
+- Créer `backend/services/optimizer.py` (squelette)
+- Créer `backend/routers/optimize_router.py`
+- Vider `backend/main.py` → ne contient plus que `FastAPI()`, CORS, inclusion des routers
+- Installer dépendances : `ortools`, `httpx`, `sqlalchemy`, `psycopg2-binary`, `alembic`
+- Mettre à jour `requirements.txt`
+- Tester que le backend démarre toujours sur `http://localhost:8000/docs`
+
+*(Sera rempli à la fin de la semaine 3.)*
 
 ---
