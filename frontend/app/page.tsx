@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { APIProvider } from '@vis.gl/react-google-maps';
 import MapContainer from '@/components/MapContainer';
 import BottomPanel from '@/components/BottomPanel';
 import StopList from '@/components/StopList';
@@ -9,20 +10,27 @@ import SideMenu from '@/components/SideMenu';
 import { Stop } from '@/types';
 
 export default function Home() {
+  const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
   const [stops, setStops] = useState<Stop[]>([]);
   const [menuOpen, setMenuOpen] = useState(false);
 
-  const handleAddStop = (address: string) => {
+  const handleAddStop = (place: { address: string; lat: number; lng: number; placeId: string }) => {
     const newStop: Stop = {
       id: Date.now().toString(),
-      address,
+      address: place.address,
+      lat: place.lat,
+      lng: place.lng,
+      placeId: place.placeId,
       order: stops.length + 1,
     };
-    setStops([...stops, newStop]);
+    setStops(prev => [...prev, newStop]);
   };
 
   const handleRemoveStop = (id: string) => {
-    setStops(stops.filter(stop => stop.id !== id));
+    setStops(prev =>
+      prev.filter(stop => stop.id !== id)
+          .map((stop, index) => ({ ...stop, order: index + 1 }))
+    );
   };
 
   // TODO: Implement optimize route / a revoir plu tard 
@@ -31,10 +39,19 @@ export default function Home() {
     alert('🚀 Route optimization will be implemented in the next phase!');
   };
 
+  if (!apiKey) {
+    return (
+      <div className="absolute inset-0 flex items-center justify-center text-sm text-red-500">
+        NEXT_PUBLIC_GOOGLE_MAPS_API_KEY manquante dans frontend 
+      </div>
+    );
+  }
+
   return (
+    <APIProvider apiKey={apiKey}>
     <div className="relative h-screen w-screen overflow-hidden">
       {/* Map - full viewport background */}
-      <MapContainer />
+      <MapContainer stops={stops} />
 
       {/* Hamburger Menu Button - Fixed Top Left */}
       <button
@@ -67,6 +84,7 @@ export default function Home() {
         </BottomPanel>
       </div>
     </div>
+    </APIProvider>
   );
 }
 
