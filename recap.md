@@ -154,7 +154,7 @@ Google injecte `.pac-container` dans `<body>` après le chargement de notre CSS 
 #### `schemas.py` — validation Pydantic des données API (22 juillet)
 Quatre modèles créés :
 - **`StopIn`** : adresse + lat/lng avec validators (`-90≤lat≤90`, `-180≤lng≤180`) + `place_id` optionnel
-- **`OptimizeRequest`** : liste de stops avec garde-fous : **min 2 stops, max 25 stops** (protège les crédits Google et les performances OR-Tools)
+- **`OptimizeRequest`** : liste de stops avec garde-fous : **min 2 stops, max 15 stops** (protège les crédits Google et les performances OR-Tools)
 - **`OptimizeResponse`** : `optimal_order`, `total_duration_sec`, `total_distance_m`, `polyline_encoded` optionnel
 - **`UserCreate`** : `EmailStr` (valide le format email via `email-validator`) + password ≥8 caractères avec au moins 1 chiffre (sera utilisé en S6)
 
@@ -169,7 +169,7 @@ Quatre modèles créés :
 #### `routers/optimize_router.py` — endpoint `/optimize` (22 juillet)
 - `POST /optimize` visible dans Swagger (`http://localhost:8000/docs`) et documenté
 - Retourne **501 Not Implemented** pour l'instant — l'endpoint existe, la logique arrive en S4
-- Valide déjà les données entrantes via `OptimizeRequest` (si on envoie >25 stops → 422 Validation Error)
+- Valide déjà les données entrantes via `OptimizeRequest` (si on envoie >15 stops → 422 Validation Error)
 
 #### `main.py` refactorisé (22 juillet)
 - Réduit à 3 responsabilités : création de l'app FastAPI + middleware CORS + inclusion des routers
@@ -195,7 +195,7 @@ alembic          → migrations DB (S6)
 | `backend/main.py` | ✏️ refactorisé | Réduit au strict : app + CORS + routers + /health |
 | `backend/config.py` | 🆕 | Chargement `.env` centralisé |
 | `backend/database.py` | 🆕 | Placeholder SQLAlchemy (S6) |
-| `backend/schemas.py` | 🆕 | StopIn, OptimizeRequest (max 25), OptimizeResponse, UserCreate |
+| `backend/schemas.py` | 🆕 | StopIn, OptimizeRequest (max 15), OptimizeResponse, UserCreate |
 | `backend/services/__init__.py` | 🆕 | Package Python |
 | `backend/services/google_maps.py` | 🆕 | Squelette Routes API (NotImplementedError → S4) |
 | `backend/services/optimizer.py` | 🆕 | Squelette OR-Tools solve_tsp (NotImplementedError → S4) |
@@ -212,19 +212,81 @@ alembic          → migrations DB (S6)
 
 ---
 
-## 🗓️ Semaine 4 — 28 juillet → 3 août 2026 *(à venir)*
+## 🗓️ Semaine 4 — 22 juillet 2026
 
-**Thème** : OR-Tools + matrice de distances + endpoint /optimize fonctionnel
+**Thème** : OR-Tools + Routes API + endpoint /optimize fonctionnel
 
-### 🎯 Objectifs dev
+### Fait
 
-- Implémenter `services/google_maps.py::get_duration_matrix(stops)` → appelle Routes API, renvoie matrice N×N
-- Implémenter `services/optimizer.py::solve_tsp(distance_matrix)` → OR-Tools CP-SAT
-- Implémenter `services/google_maps.py::get_route_polyline(stops)` → polyline encodée
-- Compléter `routers/optimize_router.py::POST /optimize` → brancher les services
-- Tester via Swagger UI avec 5-8 stops réels belges
-- Mesurer le temps de réponse (cible : <2s pour 10 stops)
+#### Implémentation `services/google_maps.py` (22 juillet)
+- **`get_duration_matrix(stops)`** : construit la matrice N×N en faisant N×(N-1) appels **parallèles** à `computeRoutes` via `asyncio.gather`, limités à 10 concurrents par `asyncio.Semaphore`
+- **`get_route_polyline(stops)`** : appelle `computeRoutes` avec tous les stops dans l’ordre optimal, retourne `(polyline_encoded, total_duration_sec, total_distance_m)`
+- `computeRouteMatrix` **abandonné** : retourne 404 (nécessite Routes API Advanced, non disponible en Basic) → approche parallèle équivalente
+- `_parse_seconds("1234s")` : helper qui parse le format de durée Google API
 
-*(Sera rempli à la fin de la semaine 4.)*
+#### Implémentation `services/optimizer.py` (22 juillet)
+- Import corrigé : `pywrapcp` (pas `pywraprcp` — typo dans le nom du module OR-Tools 9.x)
+- **`solve_tsp(distance_matrix)`** : OR-Tools Routing Library
+  - `RoutingIndexManager(n, 1, 0)` : N nodes, 1 véhicule, dépôt au node 0
+  - Stratégie : `PATH_CHEAPEST_ARC` (solution initiale greedy) + `GUIDED_LOCAL_SEARCH` (amélioration locale)
+  - Time limit 2s : garantit une réponse rapide même pour N=15
+  - Fallback : retourne l’ordre original si le solver échoue
+
+#### Câblage `routers/optimize_router.py` (22 juillet)
+- Flow complet : **matrice N×N** → **TSP OR-Tools** → **polyline**
+- Erreurs remontées en HTTP 502 si l’API Google échoue
+- Testé via Swagger UI avec 3 stops réels :
+  - `optimal_order: [0, 2, 1]` (Grand-Place → Namur → Atomium)
+  - `total_duration_sec: 7700` (~128 min)
+  - `total_distance_m: 140040` (~140 km)
+  - `polyline_encoded`: 3000+ caractères encodés 
+
+#### Max stops réduit : 25 → **15** (22 juillet)
+- N=15 : 210 appels API parallèles, ~5s — acceptable pour la démo
+- N=25 : 600 appels, ~15s — trop lent
+- Mis à jour dans `schemas.py` + `PLAN-TFE.md`
+
+#### Configurations Google Cloud résolues (22 juillet)
+- Clé backend avait une **restriction HTTP référant** (`localhost:8000/*`) qui bloquait tous les appels Python → remplacée par **None** (aucune restriction, acceptable en dev)
+- Routes API activée dans le projet `route-app-backend` (nécessaire pour `computeRoutes`)
+- En prod (S7) : restriction par **adresse IP** (IP fixe de Render) à ajouter
+
+#### Fichiers d’environnement (22 juillet)
+- `backend/.env` créé avec `GOOGLE_MAPS_API_KEY`
+- `frontend/.env.local` enrichi avec `NEXT_PUBLIC_API_URL=http://localhost:8000` (utile dès S5)
+
+### 🔧 Fichiers modifiés / créés
+
+| Fichier | État | Description |
+|---|---|---|
+| `backend/services/google_maps.py` | ♻️ implémenté | Matrice parallèle + polyline via computeRoutes |
+| `backend/services/optimizer.py` | ♻️ implémenté | TSP OR-Tools pywrapcp (PATH_CHEAPEST_ARC + GLS) |
+| `backend/routers/optimize_router.py` | ♻️ implémenté | POST /optimize complet, 502 si API Google échoue |
+| `backend/schemas.py` | ✒️ | max stops 25 → 15 |
+| `backend/.env` | 🆕 | GOOGLE_MAPS_API_KEY (clé backend) |
+| `frontend/.env.local` | ✒️ | +NEXT_PUBLIC_API_URL=http://localhost:8000 |
+| `PLAN-TFE.md` | ✒️ | Références 25 stops → 15 stops |
+
+### 📝 Warnings / points d’attention
+
+- **`computeRouteMatrix` non disponible** en Routes API Basic : l’approche parallèle `computeRoutes` est équivalente fonctionnellement mais plus coûteuse en appels (N×(N-1) vs 1). Pour N=15, c’est négligeable. À mentionner dans le chapitre 7.4.
+- **Restriction clé backend en prod** : mettre une restriction par IP Render en S7 (pas None en prod).
+- **OR-Tools optimise un circuit** (retour au dépôt) : la polyline affichée est le trajet one-way dans l’ordre optimal, pas le circuit complet. Comportement correct et attendu pour l’UX.
+
+---
+
+## 🗓️ Semaine 5 — 4 → 10 août 2026 *(a venir)*
+
+**Thème** : Câblage UI ↔ backend + affichage polyline + diagrammes
+
+###  Objectifs dev
+
+- Créer `frontend/lib/api.ts` avec `optimizeRoute(stops)` qui appelle `POST /optimize`
+- Modifier `handleOptimize` dans `page.tsx` → appel API + loading state + gestion d’erreur
+- Créer `RouteOverlay.tsx` : décode la polyline encodée et la dessine avec `<Polyline>` Google Maps
+- Réordonner visuellement la liste `StopList` selon `optimal_order`
+- Afficher temps total / distance totale dans `BottomPanel`
+
+*(Sera rempli à la fin de la semaine 5.)*
 
 ---
