@@ -31,8 +31,8 @@ class OptimizeRequest(BaseModel):
     def validate_stops(cls, v: List[StopIn]) -> List[StopIn]:
         if len(v) < 2:
             raise ValueError("At least 2 stops are required")
-        if len(v) > 25:
-            raise ValueError("Maximum 25 stops allowed")
+        if len(v) > 15:
+            raise ValueError("Maximum 15 stops allowed")
         return v
 
 
