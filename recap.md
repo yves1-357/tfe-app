@@ -136,22 +136,95 @@ Google injecte `.pac-container` dans `<body>` après le chargement de notre CSS 
 
 ---
 
-## 🗓️ Semaine 3 — 21 → 27 juillet 2026 *(à venir)*
+## 🗓️ Semaine 3 — 21 → 27 juillet 2026
 
-**Thème** : Refactor backend + analyse des besoins (écrit)
+**Thème** : Refactor backend — structure modulaire prête pour S4
+
+### Fait
+
+#### `config.py` — chargement centralisé du `.env` (22 juillet)
+- Lit `GOOGLE_MAPS_API_KEY` et `FRONTEND_ORIGIN` depuis `backend/.env` via `python-dotenv`
+- Valeurs par défaut : clé vide + `http://localhost:3000` (dev)
+- Tous les autres modules font `from config import GOOGLE_MAPS_API_KEY` — un seul point de vérité
+
+#### `database.py` — placeholder SQLAlchemy (22 juillet)
+- Fichier vide pour l'instant, sera rempli en S6 avec la vraie connexion PostgreSQL
+- Créé maintenant pour que l'architecture finale soit visible dès S3
+
+#### `schemas.py` — validation Pydantic des données API (22 juillet)
+Quatre modèles créés :
+- **`StopIn`** : adresse + lat/lng avec validators (`-90≤lat≤90`, `-180≤lng≤180`) + `place_id` optionnel
+- **`OptimizeRequest`** : liste de stops avec garde-fous : **min 2 stops, max 25 stops** (protège les crédits Google et les performances OR-Tools)
+- **`OptimizeResponse`** : `optimal_order`, `total_duration_sec`, `total_distance_m`, `polyline_encoded` optionnel
+- **`UserCreate`** : `EmailStr` (valide le format email via `email-validator`) + password ≥8 caractères avec au moins 1 chiffre (sera utilisé en S6)
+
+#### `services/google_maps.py` — squelette Routes API (22 juillet)
+- Fonctions `get_duration_matrix(stops)` et `get_route_polyline(stops)` définies mais lèvent `NotImplementedError`
+- Signatures fixes dès maintenant → le router d'optimisation et les tests futurs peuvent les référencer
+
+#### `services/optimizer.py` — squelette OR-Tools (22 juillet)
+- Fonction `solve_tsp(distance_matrix)` définie mais lève `NotImplementedError`
+- Sera implémentée en S4 avec le CP-SAT solver de Google
+
+#### `routers/optimize_router.py` — endpoint `/optimize` (22 juillet)
+- `POST /optimize` visible dans Swagger (`http://localhost:8000/docs`) et documenté
+- Retourne **501 Not Implemented** pour l'instant — l'endpoint existe, la logique arrive en S4
+- Valide déjà les données entrantes via `OptimizeRequest` (si on envoie >25 stops → 422 Validation Error)
+
+#### `main.py` refactorisé (22 juillet)
+- Réduit à 3 responsabilités : création de l'app FastAPI + middleware CORS + inclusion des routers
+- CORS lit `FRONTEND_ORIGIN` depuis `config.py` (plus de string en dur)
+- Endpoint `/` supprimé → remplacé par **`GET /health`** : `{"status": "ok", "version": "0.1.0"}`
+  - Requis par Render pour les health checks
+  - Sera appelé au mount de la home frontend pour le wake-up du cold start (S8)
+
+#### Dépendances installées (22 juillet)
+```
+email-validator  → EmailStr dans Pydantic v2
+httpx            → client HTTP async pour appels Routes API (S4)
+ortools          → solveur TSP CP-SAT de Google (S4)
+sqlalchemy       → ORM Python (S6)
+psycopg2-binary  → driver PostgreSQL (S6)
+alembic          → migrations DB (S6)
+```
+
+### 🔧 Fichiers modifiés / créés
+
+| Fichier | État | Description |
+|---|---|---|
+| `backend/main.py` | ✏️ refactorisé | Réduit au strict : app + CORS + routers + /health |
+| `backend/config.py` | 🆕 | Chargement `.env` centralisé |
+| `backend/database.py` | 🆕 | Placeholder SQLAlchemy (S6) |
+| `backend/schemas.py` | 🆕 | StopIn, OptimizeRequest (max 25), OptimizeResponse, UserCreate |
+| `backend/services/__init__.py` | 🆕 | Package Python |
+| `backend/services/google_maps.py` | 🆕 | Squelette Routes API (NotImplementedError → S4) |
+| `backend/services/optimizer.py` | 🆕 | Squelette OR-Tools solve_tsp (NotImplementedError → S4) |
+| `backend/routers/__init__.py` | 🆕 | Package Python |
+| `backend/routers/optimize_router.py` | 🆕 | POST /optimize → 501 pour l'instant |
+| `backend/requirements.txt` | ✏️ | +6 dépendances (voir ci-dessus) |
+
+### 📝 Warnings / points d'attention
+
+- **`EmailStr` dans Pydantic v2 requiert `email-validator`** : ne pas oublier en déploiement (Render) — déjà dans `requirements.txt`.
+- **`ortools` = grande dépendance** (~24 MB wheel, mais installation rapide). En prod sur Render, le build prendra ~30s de plus.
+- **`psycopg2-binary` vs `psycopg2`** : la version `-binary` est auto-suffisante (pas besoin de PostgreSQL installé localement). En prod, certains hébergeurs recommandent la version source — à noter pour S6.
+- **`NotImplementedError` dans les services** : si uvicorn est lancé et qu'on appelle `/optimize`, le serveur renvoie proprement une `HTTPException 501`. Les logs n'explosent pas.
+
+---
+
+## 🗓️ Semaine 4 — 28 juillet → 3 août 2026 *(à venir)*
+
+**Thème** : OR-Tools + matrice de distances + endpoint /optimize fonctionnel
 
 ### 🎯 Objectifs dev
 
-- Créer `backend/config.py` (chargement `.env` via `python-dotenv`)
-- Créer `backend/schemas.py` (Pydantic : `StopIn`, `OptimizeRequest` max 25 stops, `OptimizeResponse`, `UserCreate`)
-- Créer `backend/services/google_maps.py` (squelette)
-- Créer `backend/services/optimizer.py` (squelette)
-- Créer `backend/routers/optimize_router.py`
-- Vider `backend/main.py` → ne contient plus que `FastAPI()`, CORS, inclusion des routers
-- Installer dépendances : `ortools`, `httpx`, `sqlalchemy`, `psycopg2-binary`, `alembic`
-- Mettre à jour `requirements.txt`
-- Tester que le backend démarre toujours sur `http://localhost:8000/docs`
+- Implémenter `services/google_maps.py::get_duration_matrix(stops)` → appelle Routes API, renvoie matrice N×N
+- Implémenter `services/optimizer.py::solve_tsp(distance_matrix)` → OR-Tools CP-SAT
+- Implémenter `services/google_maps.py::get_route_polyline(stops)` → polyline encodée
+- Compléter `routers/optimize_router.py::POST /optimize` → brancher les services
+- Tester via Swagger UI avec 5-8 stops réels belges
+- Mesurer le temps de réponse (cible : <2s pour 10 stops)
 
-*(Sera rempli à la fin de la semaine 3.)*
+*(Sera rempli à la fin de la semaine 4.)*
 
 ---
