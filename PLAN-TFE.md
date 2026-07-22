@@ -60,6 +60,7 @@ Sur 56 jours calendaires → **rythme très soutenu**, demande 6-7 jours/semaine
 | **Optimisation TSP avec OR-Tools** | Cœur intellectuel du TFE | 3-4 jours |
 | **Calcul de matrice de distances (Routes API)** | Données réelles pour l'algo | 1-2 jours |
 | **Affichage polyline du trajet optimisé** | Démonstration visuelle | 2 jours |
+| **Mode « trajet en cours »** (trip mode + deep-link Google Maps / Waze) | Suivi de tournée arrêt par arrêt, avec navigation externe au choix (analogie Uber/Bolt) | 1-1.5 jour |
 | **Authentification (email/password)** | Sauvegarder les routes par utilisateur | 4-5 jours |
 | **Base de données PostgreSQL** | Persistance des comptes + routes | 2 jours |
 | **Sauvegarde / chargement de trajets** | Valeur réelle pour l'utilisateur | 2-3 jours |
@@ -148,13 +149,15 @@ tfe-route-app/
 │   │   ├── MapContainer.tsx           # ✏️ Google Maps à la place du pointillé
 │   │   ├── AddStopInput.tsx           # ✏️ autocomplete Places
 │   │   ├── RouteOverlay.tsx           # 🆕 polyline + markers
+│   │   ├── TripMode.tsx               # 🆕 mode « trajet en cours » (suivi arrêt par arrêt + boutons deep-link)
 │   │   ├── SaveRouteDialog.tsx        # 🆕 dialogue pour nommer un trajet
 │   │   ├── AuthForm.tsx               # 🆕 formulaire login/register
 │   │   └── InstallPrompt.tsx          # 🆕 bouton "Installer l'app"
 │   ├── lib/
 │   │   ├── api.ts                     # 🆕 fonctions fetch vers backend
 │   │   ├── auth.ts                    # 🆕 gestion du token JWT
-│   │   └── google-maps.ts             # 🆕 helpers Google Maps
+│   │   ├── google-maps.ts             # 🆕 helpers Google Maps
+│   │   └── deep-links.ts              # 🆕 constructeurs d'URL Google Maps / Waze (trip mode)
 │   ├── hooks/
 │   │   ├── useAuth.ts                 # 🆕 hook user courant
 │   │   └── useInstallPrompt.ts        # 🆕 hook beforeinstallprompt
@@ -399,10 +402,16 @@ http://localhost:3000/*
   - Réordonner visuellement la liste `StopList` selon `optimal_order`
   - Afficher temps total / distance totale dans `BottomPanel`
   - Gérer les erreurs (toast / message)
+- [ ] **Phase 4bis** : mode « trajet en cours » (analogie Uber/Bolt)
+  - Créer `frontend/lib/deep-links.ts` avec `buildGoogleMapsUrl(stops)` et `buildWazeUrl(nextStop)`
+  - Créer `TripMode.tsx` : vue de suivi avec arrêt courant surligné, distance/temps jusqu'au prochain, boutons « J'y suis » (progresser) et « Ouvrir dans Google Maps / Waze » (deep-link)
+  - State `currentStopIndex` dans `page.tsx`
+  - Highlight visuel du marker courant sur la carte + zoom auto
+  - **Ce qui est explicitement exclu** : GPS live du user, instructions vocales, recalcul dynamique → délégué aux apps tierces via deep-link
 
 #### Livrable fin S5
 - ✅ Document : ~46-48 pages écrites + diagrammes
-- ✅ App : démo complète possible (entrer stops → optimiser → voir le résultat)
+- ✅ App : démo complète possible (entrer stops → optimiser → voir le résultat → lancer le trip mode → basculer vers Google Maps / Waze au besoin)
 
 ---
 
@@ -679,6 +688,29 @@ async function handleOptimize() {
   } finally {
     setLoading(false);
   }
+}
+```
+
+**Deep-links vers apps tierces** (`lib/deep-links.ts`, pour le trip mode) :
+```ts
+// Google Maps : supporte origin + destination + waypoints
+export function buildGoogleMapsUrl(stops: Stop[]): string {
+  const [origin, ...rest] = stops;
+  const destination = rest.pop()!;
+  const waypoints = rest.map(s => `${s.lat},${s.lng}`).join("|");
+  const params = new URLSearchParams({
+    api: "1",
+    origin: `${origin.lat},${origin.lng}`,
+    destination: `${destination.lat},${destination.lng}`,
+    travelmode: "driving",
+  });
+  if (waypoints) params.set("waypoints", waypoints);
+  return `https://www.google.com/maps/dir/?${params}`;
+}
+
+// Waze : un seul destination à la fois → on envoie le PROCHAIN arrêt
+export function buildWazeUrl(nextStop: Stop): string {
+  return `https://waze.com/ul?ll=${nextStop.lat},${nextStop.lng}&navigate=yes`;
 }
 ```
 
@@ -992,6 +1024,7 @@ alembic upgrade head
 | 006 | **Vercel + Render + Supabase** | Tous gratuits, intégrations propres |
 | 007 | **PWA avec next-pwa** | Standard, intégré, manifest auto |
 | 008 | **TypeScript strict** (pas JS) | Sécurité, refactoring, jury apprécie |
+| 009 | **Navigation légère intégrée + deep-link tiers** (pas turn-by-turn native) | Trip mode visuel maison + basculement Google Maps / Waze au choix (analogie Uber/Bolt). Turn-by-turn véritable (voix, recalcul dynamique, alertes trafic) laissé aux perspectives futures : coût de dev disproportionné, aucune valeur différenciante vs solutions existantes. |
 
 ---
 
