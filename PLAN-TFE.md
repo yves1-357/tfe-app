@@ -176,7 +176,7 @@ tfe-route-app/
     │   ├── __init__.py
     │   ├── auth_router.py             # 🆕 /register, /login, GET /me, DELETE /me (RGPD)
     │   ├── routes_router.py           # 🆕 /routes (CRUD trajets sauvés)
-    │   ├── optimize_router.py         # 🆕 /optimize (rate-limited, max 25 stops)
+    │   ├── optimize_router.py         # 🆕 /optimize (rate-limited, max 15 stops)
     │   └── health_router.py           # 🆕 /health (status pour Render + wake-up frontend)
     ├── services/
     │   ├── google_maps.py             # 🆕 wrapper Routes API
@@ -335,7 +335,7 @@ http://localhost:3000/*
 - [ ] **Phase 3a** : refactor backend (toujours 1 endpoint, juste mieux organisé)
   - Créer `config.py` (chargement `.env`)
   - Créer `database.py` (placeholder, vraie DB en S4)
-  - Créer `schemas.py` (Pydantic : `StopIn` avec validation lat/lng, `OptimizeRequest` avec `max_items=25` sur la liste de stops, `OptimizeResponse`, `UserCreate` avec `EmailStr` + password min 8 caractères)
+  - Créer `schemas.py` (Pydantic : `StopIn` avec validation lat/lng, `OptimizeRequest` avec `max_items=15` sur la liste de stops, `OptimizeResponse`, `UserCreate` avec `EmailStr` + password min 8 caractères)
   - Créer `services/google_maps.py` (squelette)
   - Créer `services/optimizer.py` (squelette)
   - Créer `routers/optimize_router.py`
@@ -522,7 +522,7 @@ http://localhost:3000/*
   - `test_optimizer.py` : 3-4 tests OR-Tools (5 stops ordre correct, 1 stop, matrice asymétrique, perf <2s à 15 stops)
   - `test_auth.py` : 4 tests (register OK, email pris, login OK, /me sans token = 401)
   - `test_routes.py` : 3 tests CRUD (create, list, delete, isolation entre users)
-  - `test_optimize_endpoint.py` : 3 tests (max 25 stops, rate limit, format de réponse)
+  - `test_optimize_endpoint.py` : 3 tests (max 15 stops, rate limit, format de réponse)
   - Mock Google avec `respx` — jamais d'appel réel
 - [ ] **Astuce cold start Render** : `fetch('/health')` au mount de la home
 - [ ] Lancer `pytest` en local, tous verts
@@ -544,7 +544,7 @@ http://localhost:3000/*
   - Lien "Politique de confidentialité" dans le footer SideMenu
   - Revue des logs → aucune donnée sensible ne fuite
 - [ ] Rédiger **Chapitre 8 — Tests & Résultats** (~8 pages)
-  - Méthodologie, tests manuels + pytest, graphique performance (5/10/15/20/25 stops)
+  - Méthodologie, tests manuels + pytest, graphique performance (5/8/10/12/15 stops)
   - Score SUS + interprétation
   - Retours qualitatifs des 3 testeurs
 
