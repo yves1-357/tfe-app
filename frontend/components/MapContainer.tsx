@@ -137,7 +137,7 @@ function MapController({ location, status, onRetry }: MapControllerProps) {
         disabled={isLoading}
         aria-label={tooltip}
         title={tooltip}
-        className={`absolute bottom-6 right-6 z-20 w-12 h-12 rounded-full glass-soft flex items-center justify-center transition-all
+        className={`absolute top-safe right-4 z-20 w-12 h-12 rounded-full glass-soft flex items-center justify-center transition-all
           ${isLoading ? 'opacity-60 cursor-wait' : 'hover:scale-105 active:scale-95 cursor-pointer'}
           ${isDenied ? 'text-red-500' : 'text-2'}`}
       >
@@ -169,7 +169,7 @@ function MapController({ location, status, onRetry }: MapControllerProps) {
         <div
           role="dialog"
           aria-labelledby="geoloc-help-title"
-          className="absolute bottom-24 right-6 z-30 w-80 max-w-[calc(100vw-3rem)] glass-soft rounded-2xl p-4 text-sm text-1 shadow-lg"
+          className="absolute top-20 right-4 z-30 w-80 max-w-[calc(100vw-3rem)] glass-soft rounded-2xl p-4 text-sm text-1 shadow-lg"
         >
           <div className="flex items-start justify-between gap-3 mb-2">
             <h3 id="geoloc-help-title" className="font-semibold">

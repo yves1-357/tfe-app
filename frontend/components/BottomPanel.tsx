@@ -101,7 +101,7 @@ export default function BottomPanel({ children, stopsCount, stops = [], onOptimi
       <div className="glass-bg pointer-events-none absolute -inset-2 rounded-[32px]" />
 
       {/* Content layer (no clipping, no own background) */}
-      <div className="relative">
+      <div className="relative pb-safe">
         {/* Drag Handle */}
         <div
           className="flex justify-center pt-3.5 pb-2 cursor-grab active:cursor-grabbing select-none touch-none"

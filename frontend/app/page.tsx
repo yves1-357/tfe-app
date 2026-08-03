@@ -185,7 +185,7 @@ export default function Home() {
       )}
 
       {/* Floating panel */}
-      <div className="fixed z-20 left-1/2 -translate-x-1/2 bottom-safe w-[calc(100vw-1.5rem)] max-w-[420px] sm:left-20 sm:translate-x-0 sm:top-4 sm:bottom-auto">
+      <div className="fixed z-20 left-1/2 -translate-x-1/2 bottom-0 w-[calc(100vw-1.5rem)] max-w-[420px] sm:left-20 sm:translate-x-0 sm:top-4 sm:bottom-auto">
         {/* TripMode visible uniquement pendant le trajet */}
         {isTripMode && (
           <TripMode
