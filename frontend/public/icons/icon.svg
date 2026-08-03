@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Dark rounded square background -->
+  <rect width="512" height="512" rx="112" fill="#0a0a0a"/>
+  <!-- Blue accent circle -->
+  <circle cx="256" cy="256" r="200" fill="#1d1d1d"/>
+  <!-- "N" letter — left stroke -->
+  <rect x="136" y="152" width="36" height="208" rx="8" fill="#3b82f6"/>
+  <!-- "N" letter — diagonal stroke -->
+  <polygon points="136,152 172,152 376,344 376,360 340,360" fill="#3b82f6"/>
+  <!-- "N" letter — right stroke -->
+  <rect x="340" y="152" width="36" height="208" rx="8" fill="#3b82f6"/>
+  <!-- Blue dot accent bottom-right -->
+  <circle cx="376" cy="370" r="18" fill="#60a5fa"/>
+</svg>
