@@ -1,5 +1,6 @@
 from pydantic import BaseModel, EmailStr, field_validator
 from typing import List
+from datetime import datetime
 
 
 class StopIn(BaseModel):
@@ -44,14 +45,72 @@ class OptimizeResponse(BaseModel):
 
 
 class UserCreate(BaseModel):
+    name: str
     email: EmailStr
     password: str
+
+    @field_validator("name")
+    @classmethod
+    def validate_name(cls, v: str) -> str:
+        value = v.strip()
+        if len(value) < 2:
+            raise ValueError("Name must be at least 2 characters")
+        return value
 
     @field_validator("password")
     @classmethod
     def validate_password(cls, v: str) -> str:
         if len(v) < 8:
             raise ValueError("Password must be at least 8 characters")
+        if len(v) > 72:
+            raise ValueError("Password must be at most 72 characters (bcrypt limit)")
         if not any(c.isdigit() for c in v):
             raise ValueError("Password must contain at least one digit")
         return v
+
+
+class UserLogin(BaseModel):
+    email: EmailStr
+    password: str
+
+
+class UserRead(BaseModel):
+    id: int
+    name: str
+    email: EmailStr
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class AuthToken(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+
+
+# ── Saved routes ────────────────────────────────────────────────────────────
+
+class StopForSave(BaseModel):
+    address: str
+    order: int
+    lat: float | None = None
+    lng: float | None = None
+
+
+class SavedRouteCreate(BaseModel):
+    name: str
+    stops: List[StopForSave]
+    optimized_order: List[int]
+    total_duration_sec: int | None = None
+    total_distance_m: int | None = None
+
+
+class SavedRouteRead(BaseModel):
+    id: int
+    name: str
+    created_at: datetime
+    total_duration_sec: int | None = None
+    total_distance_m: int | None = None
+    stops_json: list
+
+    model_config = {"from_attributes": True}
