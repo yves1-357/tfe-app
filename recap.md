@@ -275,18 +275,215 @@ alembic          → migrations DB (S6)
 
 ---
 
-## 🗓️ Semaine 5 — 4 → 10 août 2026 *(a venir)*
+## 🗓️ Semaine 5 — 4 → 10 août 2026
 
-**Thème** : Câblage UI ↔ backend + affichage polyline + diagrammes
+**Thème** : Câblage UI ↔ backend + affichage polyline + trip mode
 
-###  Objectifs dev
+### Fait
 
-- Créer `frontend/lib/api.ts` avec `optimizeRoute(stops)` qui appelle `POST /optimize`
-- Modifier `handleOptimize` dans `page.tsx` → appel API + loading state + gestion d’erreur
-- Créer `RouteOverlay.tsx` : décode la polyline encodée et la dessine avec `<Polyline>` Google Maps
-- Réordonner visuellement la liste `StopList` selon `optimal_order`
-- Afficher temps total / distance totale dans `BottomPanel`
+#### Connexion frontend ↔ backend (`frontend/lib/api.ts`)
+- Créé `optimizeRoute(stops)` avec appel `POST /optimize`
+- Mapping propre frontend → backend (`placeId` vers `place_id`) avant envoi JSON
+- Gestion d'erreur robuste : si l'API renvoie une erreur, remontée du `detail` backend côté UI
 
-*(Sera rempli à la fin de la semaine 5.)*
+#### Intégration dans `page.tsx` : orchestration complète du flow optimise
+- `handleOptimize` branché sur le backend réel (plus de flow purement local)
+- Ajout d'un `loading` state (`isOptimizing`) + état d'erreur (`optimizeError`)
+- Réordonnancement des stops selon `optimal_order` pour refléter visuellement la solution OR-Tools
+- Support du départ GPS : si la géoloc est dispo, injection d'un noeud de départ temporaire puis retrait côté UI après optimisation
+- Conservation des états de trip (`isTripMode`, `currentStopIndex`, `startedFromGPS`) pour un enchaînement UX fluide
+
+#### Affichage du trajet optimisé sur la carte
+- Polyline backend (`polyline_encoded`) affichée sur la carte via `MapContainer` + `RouteOverlay`
+- Highlight visuel du stop courant en mode trajet
+- Ajout de `MapAutoFit` pour ajuster automatiquement les bounds (position user + stops) et éviter les stops hors écran
+
+#### `BottomPanel` enrichi avec résultats et actions
+- Affichage des métriques réelles : durée totale + distance totale
+- CTA `Start Route` connecté au mode trajet
+- Message d'erreur utilisateur affiché en cas d'échec backend
+- Deep-links Google Maps / Waze disponibles après optimisation
+
+#### Trip mode (Phase 4bis) finalisé
+- Composant `TripMode.tsx` opérationnel avec progression stop par stop
+- Bouton `J'y suis` pour passer au prochain arrêt
+- Bouton `Trajet terminé` pour clôturer proprement la session
+- Deep-links point-a-point (origine → stop courant) pour une navigation plus précise
+
+#### Corrections UX de fin de semaine
+- Correction d'un bug d'input/autocomplete qui restait figé après fin de trajet
+  - `BottomPanel` reste monté en permanence ; il est masqué visuellement pendant le trajet
+- Ajustement des transitions entre modes pour éviter les reset inattendus
+- Vérification lint/type sur les derniers ajustements (dépendances hooks incluses)
+
+### 🔧 Fichiers modifiés / créés
+
+| Fichier | État | Description |
+|---|---|---|
+| `frontend/lib/api.ts` | 🆕 | Appel backend `optimizeRoute` |
+| `frontend/app/page.tsx` | ✏️ | Flow optimisation, états UI, trip mode, départ GPS |
+| `frontend/components/RouteOverlay.tsx` | 🆕 | Décodage + rendu polyline Google |
+| `frontend/components/BottomPanel.tsx` | ✏️ | Résultats (durée/distance), erreurs, CTA Start Route |
+| `frontend/components/TripMode.tsx` | 🆕 | Navigation stop par stop + actions de progression |
+| `frontend/components/MapContainer.tsx` | ✏️ | Highlights stop courant + auto-fit map |
+| `frontend/lib/deep-links.ts` | 🆕 | URLs Google Maps/Waze (global + point-a-point) |
+
+### 📝 Warnings / points d'attention
+
+- **Clés API front/back bien séparées** : la clé backend ne doit pas avoir de restriction HTTP referrer (runtime serveur).
+- **Autocomplete Google** : styles `.pac-*` maintenus via `!important` (injection DOM externe).
+- **Matrice Routes API** : approche `computeRoutes` pairwise conservée (pas de `computeRouteMatrix` en plan Basic).
+
+### ▶️ Transition S6
+
+- S5 dev est clôturée : optimisation E2E + trip mode prêts pour démo.
+- Prochaine cible immédiate : auth + DB (JWT, SQLAlchemy, routes `/auth/*`, base PostgreSQL).
+
+---
+
+## 🗓️ Semaine 6 — 11 → 17 août 2026 *(avancée, commencée le 3 août)*
+
+**Thème** : Auth + PostgreSQL + Saved Routes (backend + frontend complets)
+
+### Fait
+
+#### PostgreSQL local + SQLAlchemy (3 août)
+- PostgreSQL installé nativement sur Windows, base `nextstop` créée, user `postgres` / password `dev` / port 5432
+- `database.py` complet : `create_engine`, `SessionLocal`, `Base = declarative_base()`, dépendance FastAPI `get_db()`
+- Pas d'Alembic pour l'instant → `Base.metadata.create_all(bind=engine)` au startup de FastAPI (migration Alembic planifiée en S7)
+
+#### `models.py` — modèles ORM (3 août)
+Deux tables créées avec SQLAlchemy 2.0 (style `Mapped`) :
+- **`User`** : `id`, `name` (nullable), `email` (unique), `password_hash`, `created_at`
+- **`SavedRoute`** : `id`, `user_id` (FK → users.id avec `ON DELETE CASCADE`), `name`, `stops_json` (JSON), `optimized_order_json` (JSON), `total_duration_sec`, `total_distance_m`, `created_at`
+- Relation bidirectionnelle `user.saved_routes` avec `cascade="all, delete-orphan"` → droit à l'oubli RGPD automatique
+
+#### `auth.py` — hashing + JWT (3 août)
+- `CryptContext(schemes=["bcrypt"])` via **passlib 1.7.4** + **bcrypt pinned à 4.0.1**
+  - bcrypt 5.x incompatible avec passlib 1.7.4 (C-level error sur le detect_wrap_bug interne) → downgrade à 4.0.1
+  - `_to_72_bytes(password)` : troncature explicite UTF-8 à 72 bytes avant hachage (limite bcrypt)
+- `create_access_token(user_id)` : JWT HS256, expiry 7 jours, payload `{ "sub": str(user_id), "exp": ... }`
+- `get_current_user` : dépendance FastAPI `OAuth2PasswordBearer`, décode JWT, charge l'utilisateur depuis DB
+
+#### `routers/auth_router.py` — endpoints auth (3 août)
+- `POST /auth/register` : crée un User, hash le mot de passe, renvoie `UserRead` (201)
+  - 409 si email déjà pris
+- `POST /auth/login` : vérifie email + password, renvoie JWT
+  - 401 si identifiants invalides
+- `GET /auth/me` : renvoie l'utilisateur courant (token requis)
+- `DELETE /auth/me` : supprime le compte + cascade sur `saved_routes` (RGPD) — renvoie 200
+
+#### `routers/routes_router.py` — CRUD trajets sauvegardés (3 août)
+- `POST /routes` (201) : sauvegarde un trajet pour l'utilisateur connecté (`user_id` issu du JWT)
+- `GET /routes` : liste les trajets de l'utilisateur, triés par `created_at DESC`
+- `DELETE /routes/{route_id}` (204) : supprime un trajet après vérification d'ownership (404 si pas owner)
+
+#### `schemas.py` — extensions Pydantic (3 août)
+Nouveaux modèles ajoutés :
+- **`UserCreate`** : `name` (min 2 chars), `EmailStr`, `password` (≥8 chars, ≥1 chiffre, ≤72 chars bcrypt)
+- **`UserLogin`**, **`UserRead`** (avec `name`), **`AuthToken`**
+- **`StopForSave`** : `address`, `order`, `lat?`, `lng?`
+- **`SavedRouteCreate`** : `name`, `stops: list[StopForSave]`, `optimized_order`, `total_duration_sec?`, `total_distance_m?`
+- **`SavedRouteRead`** : `id`, `name`, `created_at`, durée, distance, `stops_json`
+
+#### Frontend — `lib/auth.ts` (3 août)
+Gestion du token JWT côté client :
+- `getAuthToken()` / `setAuthToken()` / `clearAuthToken()` / `hasAuthToken()` → localStorage
+- `registerUser(name, email, password)` → `POST /auth/register`
+- `loginUser(email, password)` → `POST /auth/login` + `setAuthToken()`
+- `getCurrentUser()` → `GET /auth/me` + clear token automatique si 401
+- `deleteCurrentUser()` → `DELETE /auth/me` + `clearAuthToken()`
+- `parseErrorDetail()` : gère les deux formats d'erreur Pydantic (`string` detail ET tableau `[{msg, loc}]` 422)
+
+#### Frontend — `lib/api.ts` — extensions (3 août)
+- `saveRoute(payload)` → `POST /routes` avec Bearer token
+- `getSavedRoutes()` → `GET /routes` avec Bearer token
+- `deleteSavedRoute(id)` → `DELETE /routes/{id}` avec Bearer token
+
+#### Frontend — `AuthModal.tsx` (3 août)
+Modal Login/Register intégrée dans le SideMenu (pas de page dédiée — meilleure UX modale) :
+- Bascule Login ↔ Register, reset des champs à l'ouverture
+- Affiche les erreurs Pydantic précises (validation email, force du mot de passe, etc.)
+- Stylisée avec `.auth-modal-shell` (dark + light mode via Tailwind + CSS vars)
+
+#### Frontend — `DeleteAccountModal.tsx` (3 août)
+Modal de suppression de compte RGPD :
+- L'utilisateur doit **taper** `DELETETHISACCOUNT` exactement (pas de coller — `onPaste` bloqué)
+- Bouton "Supprimer" activé uniquement si la correspondance est exacte
+- Style `.auth-modal-shell` cohérent avec les autres modales
+
+#### Frontend — `SaveRouteDialog.tsx` (3 août)
+Dialog post-trajet (affiché après "Trajet terminé" si l'utilisateur est connecté) :
+- Résumé de la route : nombre de stops, durée, distance
+- Champ nom pré-rempli avec la date du jour (format fr-BE : `JJ/MM/AAAA`)
+- Boutons "Sauvegarder" (bleu) / "Non merci" (gris), Escape ferme
+- Appelle `saveRoute()` → `POST /routes` → feedback immédiat
+
+#### Frontend — `SideMenu.tsx` — panneau Saved Routes (3 août)
+Panneau accordéon (comme Profile) dans la section Library :
+- Si non connecté : message + boutons Login/Register
+- Si connecté : liste des routes sauvegardées depuis `GET /routes`
+- Chaque carte affiche :
+  - **Nom** + **date de création** (format DD/MM/YYYY fr-BE)
+  - **Liste ordonnée des adresses** avec numéros cerclés bleus (ordre optimisé)
+  - **Durée** (`1h 23min`) et **distance** (`12.3 km`) avec icônes
+  - **Bouton poubelle** → `DELETE /routes/{id}` + suppression optimistic du state
+- Helpers de formatage ajoutés : `formatDuration()`, `formatDistance()`, `formatDate()`
+
+#### Frontend — `globals.css` — `.auth-modal-shell` (3 août)
+Classe CSS partagée par toutes les modales auth :
+- Dark : fond translucide avec `backdrop-filter: blur`
+- Light : fond blanc 84% opacité, bordure sombre, ombre douce
+
+#### `page.tsx` — câblage SaveRouteDialog (3 août)
+- `handleStopTrip` : si `hasAuthToken()` → affiche `<SaveRouteDialog>`, sinon `resetAfterTrip()`
+- `handleSaveRoute(name)` : appelle `saveRoute()` puis `resetAfterTrip()`
+- `resetAfterTrip()` : nettoie stops + optimizeResult + showSaveDialog
+
+#### Problèmes résolus en cours de session
+| Problème | Cause | Fix |
+|---|---|---|
+| bcrypt 5.x + passlib 1.7.4 | `detect_wrap_bug()` interne lève C-level error | Pinned `bcrypt==4.0.1` dans `requirements.txt` |
+| CORS manquant sur les 500 | `ServerErrorMiddleware` enveloppe l'app entière, hors CORS | Fix DB schema → plus de 500 |
+| DB schema mismatch (`name` missing) | Table créée sans la colonne `name` | Drop + create_all via script Python |
+| Pydantic 422 non parsé | `parseErrorDetail` gérait uniquement `string`, pas `array` | Ajout du cas array avec strip `"Value error, "` |
+| Backend stale (routes_router absent) | `--reload` ne détecte pas les nouveaux fichiers si créés après démarrage | Kill complet des processus Python/uvicorn + restart propre |
+| Port 8000 déjà occupé au restart | Terminal async précédent encore actif | `kill_terminal` + `Stop-Process` explicite |
+
+### 🔧 Fichiers modifiés / créés
+
+| Fichier | État | Description |
+|---|---|---|
+| `backend/database.py` | ♻️ implémenté | SQLAlchemy engine + SessionLocal + get_db |
+| `backend/models.py` | 🆕 | ORM User + SavedRoute (cascade RGPD) |
+| `backend/auth.py` | 🆕 | bcrypt (4.0.1), JWT HS256, get_current_user |
+| `backend/schemas.py` | ✏️ | +UserCreate/Login/Read, AuthToken, SavedRouteCreate/Read |
+| `backend/routers/auth_router.py` | 🆕 | /register, /login, /me, DELETE /me |
+| `backend/routers/routes_router.py` | 🆕 | POST/GET/DELETE /routes (avec ownership) |
+| `backend/main.py` | ✏️ | +auth_router, +routes_router, +create_all startup |
+| `backend/requirements.txt` | ✏️ | +passlib, +python-jose, +bcrypt==4.0.1 (pin) |
+| `backend/.env` | ✏️ | +JWT_SECRET, +DATABASE_URL |
+| `frontend/lib/auth.ts` | 🆕 | Token JWT localStorage + appels auth API |
+| `frontend/lib/api.ts` | ✏️ | +saveRoute, +getSavedRoutes, +deleteSavedRoute |
+| `frontend/types/index.ts` | ✏️ | +AuthUser, +AuthTokenResponse, +SavedRouteStop, +SavedRouteItem |
+| `frontend/components/AuthModal.tsx` | 🆕 | Modal Login/Register dark+light |
+| `frontend/components/DeleteAccountModal.tsx` | 🆕 | Confirmation typée RGPD |
+| `frontend/components/SaveRouteDialog.tsx` | 🆕 | Dialog post-trajet avec résumé route |
+| `frontend/components/SideMenu.tsx` | ✏️ | +panneau Saved Routes (adresses + métriques + delete) |
+| `frontend/app/page.tsx` | ✏️ | +handleStopTrip avec auth check + handleSaveRoute |
+| `frontend/app/globals.css` | ✏️ | +.auth-modal-shell dark/light |
+
+### 📝 Décisions / écarts par rapport au plan S6
+
+- **Pas de pages `/login` + `/register` séparées** → remplacées par `AuthModal` intégrée dans le SideMenu (meilleure UX, flux contextuel)
+- **Pas de hook `useAuth()`** → état auth géré directement dans `SideMenu` et `page.tsx` (complexité non justifiée à ce stade)
+- **`routes_router.py` fait en S6** (prévu S7) → avance sur le planning
+- **Pas de page `/saved` dédiée** → panneau dans le SideMenu drawer (UX cohérente, évite une navigation supplémentaire)
+- **Alembic reporté à S7** → `create_all()` suffisant pour le dev local
+
+### ▶️ Transition S7
+
+- S6 dev clôturée : auth E2E + saved routes complets, backend `/routes` vérifié en production locale.
+- Prochaine cible : Alembic migrations, déploiement Vercel + Render + Supabase, PWA manifest.
 
 ---
