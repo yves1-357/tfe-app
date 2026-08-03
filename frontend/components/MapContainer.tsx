@@ -1,9 +1,42 @@
+/// <reference types="@types/google.maps" />
 'use client';
 
 import { Map, Marker, useMap } from '@vis.gl/react-google-maps';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTheme } from './ThemeProvider';
 import type { Stop } from '@/types';
+import RouteOverlay from './RouteOverlay';
+
+/** Adapte le zoom de la carte à chaque nouveau stop ajouté. */
+function MapAutoFit({ stops, userLocation }: {
+  stops: Stop[];
+  userLocation: { lat: number; lng: number } | null;
+}) {
+  const map = useMap();
+  const prevCountRef = useRef(0);
+
+  useEffect(() => {
+    if (!map) return;
+    const valid = stops.filter(s => s.lat !== undefined && s.lng !== undefined);
+    if (valid.length === 0 || valid.length <= prevCountRef.current) {
+      prevCountRef.current = valid.length;
+      return;
+    }
+    prevCountRef.current = valid.length;
+
+    if (valid.length === 1) {
+      map.panTo({ lat: valid[0].lat!, lng: valid[0].lng! });
+      return;
+    }
+
+    const bounds = new google.maps.LatLngBounds();
+    valid.forEach(s => bounds.extend({ lat: s.lat!, lng: s.lng! }));
+    if (userLocation) bounds.extend(userLocation);
+    map.fitBounds(bounds, 80);
+  }, [map, stops, userLocation]);
+
+  return null;
+}
 
 const BRUSSELS_CENTER = { lat: 50.8503, lng: 4.3517 };
 const DEFAULT_ZOOM = 12;
@@ -171,9 +204,11 @@ function MapController({ location, status, onRetry }: MapControllerProps) {
 
 interface MapContainerProps {
   stops?: Stop[];
+  polyline?: string | null;
+  currentStopIndex?: number; // -1 = aucun highlight
 }
 
-export default function MapContainer({ stops = [] }: MapContainerProps) {
+export default function MapContainer({ stops = [], polyline = null, currentStopIndex = -1 }: MapContainerProps) {
   const { isDark } = useTheme();
   const { location, status, retry } = useUserLocation();
 
@@ -190,16 +225,24 @@ export default function MapContainer({ stops = [] }: MapContainerProps) {
         {location && (
           <Marker position={location} icon={USER_DOT_SVG} title="Vous êtes ici" />
         )}
-        {stops.map((stop) =>
+        {stops.map((stop, index) =>
           stop.lat !== undefined && stop.lng !== undefined ? (
             <Marker
               key={stop.id}
               position={{ lat: stop.lat, lng: stop.lng }}
-              label={{ text: String(stop.order), color: 'white', fontWeight: 'bold', fontSize: '12px' }}
+              label={{
+                text: String(stop.order),
+                color: 'white',
+                fontWeight: 'bold',
+                fontSize: index === currentStopIndex ? '14px' : '12px',
+              }}
               title={stop.address}
+              zIndex={index === currentStopIndex ? 10 : 1}
             />
           ) : null
         )}
+        {polyline && <RouteOverlay encodedPolyline={polyline} />}
+        <MapAutoFit stops={stops} userLocation={location} />
       </Map>
       <MapController location={location} status={status} onRetry={retry} />
 
