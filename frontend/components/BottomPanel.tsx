@@ -93,18 +93,18 @@ export default function BottomPanel({ children, stopsCount, stops = [], onOptimi
   return (
     <div
       ref={panelRef}
-      className={`relative w-full z-10 ${isDragging ? '' : 'spring'} ${
-        isExpanded ? 'max-h-[82dvh]' : 'max-h-[78dvh]'
-      }`}
+      className={`relative w-full z-10 ${isDragging ? '' : 'spring'}`}
     >
       {/* Liquid-glass backdrop (extends beyond content & feathers into the map) */}
       <div className="glass-bg pointer-events-none absolute -inset-2 rounded-[32px]" />
 
-      {/* Content layer (no clipping, no own background) */}
-      <div className="relative pb-safe">
+      {/* Content layer — flex-column bounded height, inner overflow-hidden preserves glass feathering */}
+      <div className={`relative flex flex-col pb-safe overflow-hidden ${
+        isExpanded ? 'max-h-[82dvh]' : 'max-h-[78dvh]'
+      }`}>
         {/* Drag Handle */}
         <div
-          className="flex justify-center pt-3.5 pb-2 cursor-grab active:cursor-grabbing select-none touch-none"
+          className="flex-shrink-0 flex justify-center pt-3.5 pb-2 cursor-grab active:cursor-grabbing select-none touch-none"
           onMouseDown={(e) => handleDragStart(e.clientY)}
           onTouchStart={(e) => handleDragStart(e.touches[0].clientY)}
         >
@@ -112,7 +112,7 @@ export default function BottomPanel({ children, stopsCount, stops = [], onOptimi
         </div>
 
         {/* Header */}
-        <div className="px-6 pt-1.5 pb-4">
+        <div className="flex-shrink-0 px-6 pt-1.5 pb-4">
           <div className="flex items-center justify-between gap-3">
             <div className="flex-1 min-w-0">
               <h2 className="lg-text text-[22px] leading-tight font-semibold text-1 tracking-tight">
@@ -132,7 +132,7 @@ export default function BottomPanel({ children, stopsCount, stops = [], onOptimi
 
         {/* Empty state CTA */}
         {!showInput && stopsCount === 0 && (
-          <div className="px-4 pb-5 animate-fade-in-up">
+          <div className="flex-shrink-0 px-4 pb-5 animate-fade-in-up">
             <button
               type="button"
               onClick={() => setShowInput(true)}
@@ -146,20 +146,18 @@ export default function BottomPanel({ children, stopsCount, stops = [], onOptimi
           </div>
         )}
 
-        {/* Scrollable content */}
+        {/* Scrollable content — flex-1 so it fills available space, min-h-0 required for flex children */}
         {(showInput || stopsCount > 0) && (
           <div
-            className={`px-4 overflow-y-auto overscroll-contain ${
-              isExpanded ? 'pb-6 max-h-[58dvh]' : 'pb-3 max-h-[40dvh]'
-            }`}
+            className="flex-1 min-h-0 px-4 overflow-y-auto overscroll-contain pb-2"
           >
             {children}
           </div>
         )}
 
-        {/* Optimize button */}
+        {/* Optimize button + results — always visible at the bottom, flex-shrink-0 */}
         {stopsCount > 1 && (
-          <div className="px-4 pt-2 pb-3 animate-fade-in-up">
+          <div className="flex-shrink-0 px-4 pt-2 pb-3 animate-fade-in-up">
             <button
               type="button"
               onClick={onOptimize}
