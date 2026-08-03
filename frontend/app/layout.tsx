@@ -14,8 +14,24 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Route App",
-  description: "Multi-stop route planner - Plan and optimize your routes",
+  title: "NextStop",
+  description: "Planificateur de tournées multi-arrêts avec optimisation automatique",
+  manifest: "/manifest.webmanifest",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "NextStop",
+  },
+  other: {
+    "mobile-web-app-capable": "yes",
+  },
+};
+
+export const viewport = {
+  themeColor: "#0a0a0a",
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
 };
 
 export default function RootLayout({
