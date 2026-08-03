@@ -1,4 +1,22 @@
-# Placeholder — vraie connexion SQLAlchemy + Alembic introduite en S6
-# Ce fichier sera remplacé quand la base de données PostgreSQL sera mise en place.
+from typing import Generator
 
-# DATABASE_URL, engine, SessionLocal, Base → définis en S6
+from sqlalchemy import create_engine
+from sqlalchemy.orm import declarative_base, sessionmaker, Session
+
+from config import DATABASE_URL
+
+
+# SQLite nécessite ce flag; PostgreSQL l'ignore.
+connect_args = {"check_same_thread": False} if DATABASE_URL.startswith("sqlite") else {}
+
+engine = create_engine(DATABASE_URL, connect_args=connect_args)
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+Base = declarative_base()
+
+
+def get_db() -> Generator[Session, None, None]:
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()

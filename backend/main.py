@@ -1,7 +1,11 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from config import FRONTEND_ORIGIN
+from database import Base, engine
+import models
+from routers.auth_router import router as auth_router
 from routers.optimize_router import router as optimize_router
+from routers.routes_router import router as routes_router
 
 app = FastAPI(
     title="NextStop API",
@@ -9,9 +13,15 @@ app = FastAPI(
     version="0.1.0",
 )
 
+_origins = list({
+    FRONTEND_ORIGIN,
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+})
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[FRONTEND_ORIGIN],
+    allow_origins=_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -19,6 +29,14 @@ app.add_middleware(
 
 # Routers
 app.include_router(optimize_router)
+app.include_router(auth_router)
+app.include_router(routes_router)
+
+
+@app.on_event("startup")
+def on_startup() -> None:
+    # Temporary bootstrap for S6; Alembic migration flow will replace this in S7.
+    Base.metadata.create_all(bind=engine)
 
 
 @app.get("/health", tags=["health"])
