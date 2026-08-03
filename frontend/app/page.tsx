@@ -7,12 +7,24 @@ import BottomPanel from '@/components/BottomPanel';
 import StopList from '@/components/StopList';
 import AddStopInput from '@/components/AddStopInput';
 import SideMenu from '@/components/SideMenu';
-import { Stop } from '@/types';
+import TripMode from '@/components/TripMode';
+import SaveRouteDialog from '@/components/SaveRouteDialog';
+import { Stop, OptimizeResponse } from '@/types';
+import { optimizeRoute, saveRoute } from '@/lib/api';
+import { hasAuthToken } from '@/lib/auth';
 
 export default function Home() {
   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
   const [stops, setStops] = useState<Stop[]>([]);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [isOptimizing, setIsOptimizing] = useState(false);
+  const [optimizeError, setOptimizeError] = useState<string | null>(null);
+  const [optimizeResult, setOptimizeResult] = useState<OptimizeResponse | null>(null);
+  const [startedFromGPS, setStartedFromGPS] = useState(false);
+  const [isTripMode, setIsTripMode] = useState(false);
+  const [currentStopIndex, setCurrentStopIndex] = useState(0);
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [showSaveDialog, setShowSaveDialog] = useState(false);
 
   const handleAddStop = (place: { address: string; lat: number; lng: number; placeId: string }) => {
     const newStop: Stop = {
@@ -24,6 +36,10 @@ export default function Home() {
       order: stops.length + 1,
     };
     setStops(prev => [...prev, newStop]);
+    setOptimizeResult(null);
+    setStartedFromGPS(false);
+    setIsTripMode(false);
+    setCurrentStopIndex(0);
   };
 
   const handleRemoveStop = (id: string) => {
@@ -31,12 +47,93 @@ export default function Home() {
       prev.filter(stop => stop.id !== id)
           .map((stop, index) => ({ ...stop, order: index + 1 }))
     );
+    setOptimizeResult(null);
+    setStartedFromGPS(false);
+    setIsTripMode(false);
+    setCurrentStopIndex(0);
   };
 
-  // TODO: Implement optimize route / a revoir plu tard 
-  const handleOptimize = () => {
-    // TODO: Call backend API to optimize route
-    alert('🚀 Route optimization will be implemented in the next phase!');
+  const handleStartTrip = () => {
+    setCurrentStopIndex(0);
+    setIsTripMode(true);
+  };
+
+  const handleNextStop = () => {
+    setCurrentStopIndex(prev => Math.min(prev + 1, stops.length - 1));
+  };
+
+  const handleStopTrip = () => {
+    setIsTripMode(false);
+    setCurrentStopIndex(0);
+    // Si l'utilisateur est connecté et qu'une optimisation existe, proposer la sauvegarde
+    if (hasAuthToken() && optimizeResult) {
+      setShowSaveDialog(true);
+    } else {
+      resetAfterTrip();
+    }
+  };
+
+  const resetAfterTrip = () => {
+    setStops([]);
+    setOptimizeResult(null);
+    setStartedFromGPS(false);
+    setShowSaveDialog(false);
+  };
+
+  const handleSaveRoute = async (name: string) => {
+    if (!optimizeResult) return;
+    await saveRoute({
+      name,
+      stops,
+      optimized_order: optimizeResult.optimal_order,
+      total_duration_sec: optimizeResult.total_duration_sec,
+      total_distance_m: optimizeResult.total_distance_m,
+    });
+    resetAfterTrip();
+  };
+
+  const handleOptimize = async () => {
+    if (stops.length < 2 || isOptimizing) return;
+    setIsOptimizing(true);
+    setOptimizeError(null);
+    try {
+      // Tente de récupérer la position GPS en cache (instantané, déjà demandée par MapContainer)
+      let gpsStart: { lat: number; lng: number } | null = null;
+      if (typeof navigator !== 'undefined' && navigator.geolocation) {
+        gpsStart = await new Promise<{ lat: number; lng: number } | null>((resolve) => {
+          navigator.geolocation.getCurrentPosition(
+            (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+            () => resolve(null),
+            { maximumAge: 60_000, timeout: 3_000, enableHighAccuracy: false }
+          );
+        });
+      }
+
+      // Prépend la position GPS comme noeud 0 (dépôt OR-Tools)
+      const stopsForApi: Stop[] = gpsStart
+        ? [{ id: '__gps__', address: 'Votre position', order: 0, lat: gpsStart.lat, lng: gpsStart.lng }, ...stops]
+        : stops;
+
+      const result = await optimizeRoute(stopsForApi);
+
+      // Si GPS prépendé : optimal_order[0] = 0 (dépôt), on l'exclut et on décale les indices
+      const offset = gpsStart ? 1 : 0;
+      const reorderedStops = result.optimal_order
+        .filter((idx) => idx >= offset)
+        .map((idx, newOrder) => ({
+          ...stops[idx - offset],
+          order: newOrder + 1,
+        }));
+
+      setStops(reorderedStops);
+      setOptimizeResult(result);
+      setStartedFromGPS(!!gpsStart);
+      setUserLocation(gpsStart);
+    } catch (e) {
+      setOptimizeError(e instanceof Error ? e.message : "Erreur lors de l'optimisation");
+    } finally {
+      setIsOptimizing(false);
+    }
   };
 
   if (!apiKey) {
@@ -51,7 +148,7 @@ export default function Home() {
     <APIProvider apiKey={apiKey}>
     <div className="relative h-screen w-screen overflow-hidden">
       {/* Map - full viewport background */}
-      <MapContainer stops={stops} />
+      <MapContainer stops={stops} polyline={optimizeResult?.polyline_encoded ?? null} currentStopIndex={isTripMode ? currentStopIndex : -1} />
 
       {/* Hamburger Menu Button - Fixed Top Left */}
       <button
@@ -76,12 +173,36 @@ export default function Home() {
       {/* Side Menu */}
       <SideMenu isOpen={menuOpen} onClose={() => setMenuOpen(false)} />
 
-      {/* Floating panel - top-left on desktop, bottom sheet on mobile */}
+      {/* Save route dialog — shown after trip ends if user is logged in */}
+      {showSaveDialog && optimizeResult && (
+        <SaveRouteDialog
+          isOpen={showSaveDialog}
+          stops={stops}
+          optimizeResult={optimizeResult}
+          onSave={handleSaveRoute}
+          onSkip={resetAfterTrip}
+        />
+      )}
+
+      {/* Floating panel */}
       <div className="fixed z-20 left-1/2 -translate-x-1/2 bottom-4 w-[calc(100vw-1.5rem)] max-w-[420px] sm:left-20 sm:translate-x-0 sm:top-4 sm:bottom-auto">
-        <BottomPanel stopsCount={stops.length} onOptimize={handleOptimize}>
-          <AddStopInput onAddStop={handleAddStop} />
-          <StopList stops={stops} onRemoveStop={handleRemoveStop} />
-        </BottomPanel>
+        {/* TripMode visible uniquement pendant le trajet */}
+        {isTripMode && (
+          <TripMode
+            stops={stops}
+            currentIndex={currentStopIndex}
+            userLocation={userLocation}
+            onNext={handleNextStop}
+            onStop={handleStopTrip}
+          />
+        )}
+        {/* BottomPanel reste toujours monté pour préserver l'autocomplete */}
+        <div className={isTripMode ? 'hidden' : ''}>
+          <BottomPanel stopsCount={stops.length} stops={stops} onOptimize={handleOptimize} isOptimizing={isOptimizing} routeResult={optimizeResult} optimizeError={optimizeError} startedFromGPS={startedFromGPS} onStartTrip={handleStartTrip}>
+            <AddStopInput onAddStop={handleAddStop} />
+            <StopList stops={stops} onRemoveStop={handleRemoveStop} />
+          </BottomPanel>
+        </div>
       </div>
     </div>
     </APIProvider>
