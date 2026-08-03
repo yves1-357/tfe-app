@@ -94,7 +94,7 @@ export default function BottomPanel({ children, stopsCount, stops = [], onOptimi
     <div
       ref={panelRef}
       className={`relative w-full z-10 ${isDragging ? '' : 'spring'} ${
-        isExpanded ? 'max-h-[82vh]' : 'max-h-[78vh]'
+        isExpanded ? 'max-h-[82dvh]' : 'max-h-[78dvh]'
       }`}
     >
       {/* Liquid-glass backdrop (extends beyond content & feathers into the map) */}
@@ -150,7 +150,7 @@ export default function BottomPanel({ children, stopsCount, stops = [], onOptimi
         {(showInput || stopsCount > 0) && (
           <div
             className={`px-4 overflow-y-auto overscroll-contain ${
-              isExpanded ? 'pb-6 max-h-[58vh]' : 'pb-3 max-h-[40vh]'
+              isExpanded ? 'pb-6 max-h-[58dvh]' : 'pb-3 max-h-[40dvh]'
             }`}
           >
             {children}

@@ -71,6 +71,20 @@ body {
   overflow: hidden;
 }
 
+/* iOS Safari: use dynamic viewport height so the panel doesn't hide behind the browser chrome */
+@supports (height: 100dvh) {
+  html { height: 100dvh; }
+}
+
+/* ============================================================
+   SAFE AREA UTILITIES — iOS notch + home indicator
+   Apply these to fixed elements that must clear the system UI.
+   ============================================================ */
+.top-safe    { top:    max(env(safe-area-inset-top,    0px), 1rem);   }
+.bottom-safe { bottom: max(env(safe-area-inset-bottom, 0px), 1rem);   }
+.pt-safe     { padding-top:    max(env(safe-area-inset-top,    0px), 2rem);   }
+.pb-safe     { padding-bottom: max(env(safe-area-inset-bottom, 0px), 1.5rem); }
+
 body {
   font-family: var(--font-sans), system-ui, -apple-system, sans-serif;
   background: var(--app-bg);

@@ -90,7 +90,7 @@ export default function AddStopInput({ onAddStop }: AddStopInputProps) {
           type="text"
           placeholder={places ? 'Enter address or place' : 'Loading…'}
           disabled={!places}
-          className="no-autofill flex-1 min-w-0 bg-transparent text-1 text-[15px] placeholder-gray-500 focus:outline-none disabled:opacity-50"
+          className="no-autofill flex-1 min-w-0 bg-transparent text-1 text-base placeholder-gray-500 focus:outline-none disabled:opacity-50"
         />
       </div>
     </div>

@@ -175,7 +175,7 @@ export default function SideMenu({ isOpen, onClose }: SideMenuProps) {
         <div className="glass-bg pointer-events-none absolute inset-y-0 -left-2 -right-3" />
 
         {/* Content layer */}
-        <div className="relative flex flex-col h-full px-6 pt-8 pb-6">
+        <div className="relative flex flex-col h-full px-6 pt-safe pb-safe">
           {/* Header: title + close */}
           <div className="flex items-start justify-between mb-9 px-1">
             <div>

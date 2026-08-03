@@ -146,7 +146,7 @@ export default function Home() {
 
   return (
     <APIProvider apiKey={apiKey}>
-    <div className="relative h-screen w-screen overflow-hidden">
+    <div className="relative h-dvh w-screen overflow-hidden">
       {/* Map - full viewport background */}
       <MapContainer stops={stops} polyline={optimizeResult?.polyline_encoded ?? null} currentStopIndex={isTripMode ? currentStopIndex : -1} />
 
@@ -154,7 +154,7 @@ export default function Home() {
       <button
         type="button"
         onClick={() => setMenuOpen(true)}
-        className="press-effect glass hover-surface fixed top-4 left-4 z-30 w-11 h-11 rounded-2xl flex items-center justify-center text-1"
+        className="press-effect glass hover-surface fixed top-safe left-4 z-30 w-11 h-11 rounded-2xl flex items-center justify-center text-1"
         aria-label="Open menu"
       >
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -163,7 +163,7 @@ export default function Home() {
       </button>
 
       {/* Brand - Top Center (frameless) */}
-      <div className="fixed top-4 left-1/2 -translate-x-1/2 z-30 pointer-events-none">
+      <div className="fixed top-safe left-1/2 -translate-x-1/2 z-30 pointer-events-none">
         <div className="px-2 py-1">
           <span className="lg-text text-1 text-base font-bold tracking-tight">Next</span>
           <span className="lg-text text-blue-400 text-base font-bold tracking-tight">Stop</span>
@@ -185,7 +185,7 @@ export default function Home() {
       )}
 
       {/* Floating panel */}
-      <div className="fixed z-20 left-1/2 -translate-x-1/2 bottom-4 w-[calc(100vw-1.5rem)] max-w-[420px] sm:left-20 sm:translate-x-0 sm:top-4 sm:bottom-auto">
+      <div className="fixed z-20 left-1/2 -translate-x-1/2 bottom-safe w-[calc(100vw-1.5rem)] max-w-[420px] sm:left-20 sm:translate-x-0 sm:top-4 sm:bottom-auto">
         {/* TripMode visible uniquement pendant le trajet */}
         {isTripMode && (
           <TripMode
