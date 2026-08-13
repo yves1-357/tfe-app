@@ -10,6 +10,7 @@ import SideMenu from '@/components/SideMenu';
 import TripMode from '@/components/TripMode';
 import SaveRouteDialog from '@/components/SaveRouteDialog';
 import { Stop, OptimizeResponse } from '@/types';
+import type { SavedRouteItem } from '@/types';
 import { optimizeRoute, saveRoute } from '@/lib/api';
 import { hasAuthToken } from '@/lib/auth';
 
@@ -77,6 +78,41 @@ export default function Home() {
     setStops([]);
     setOptimizeResult(null);
     setStartedFromGPS(false);
+    setShowSaveDialog(false);
+  };
+
+  const handleLoadRoute = (route: SavedRouteItem) => {
+    const restoredStops: Stop[] = [...route.stops_json]
+      .sort((a, b) => a.order - b.order)
+      .map((s, idx) => ({
+        id: `loaded-${route.id}-${idx}`,
+        address: s.address,
+        order: idx + 1,
+        lat: s.lat ?? undefined,
+        lng: s.lng ?? undefined,
+      }));
+
+    setStops(restoredStops);
+
+    if (route.total_duration_sec != null && route.total_distance_m != null) {
+      // Recuperer les  metrics; polyline not stored so re-optimize to get it back
+      const order = route.optimized_order.length > 0
+        ? route.optimized_order
+        : restoredStops.map((_, i) => i);
+      setOptimizeResult({
+        optimal_order: order,
+        total_duration_sec: route.total_duration_sec,
+        total_distance_m: route.total_distance_m,
+        polyline_encoded: null,
+      });
+    } else {
+      setOptimizeResult(null);
+    }
+
+    setIsTripMode(false);
+    setCurrentStopIndex(0);
+    setStartedFromGPS(false);
+    setOptimizeError(null);
     setShowSaveDialog(false);
   };
 
@@ -171,7 +207,7 @@ export default function Home() {
       </div>
 
       {/* Side Menu */}
-      <SideMenu isOpen={menuOpen} onClose={() => setMenuOpen(false)} />
+      <SideMenu isOpen={menuOpen} onClose={() => setMenuOpen(false)} onLoadRoute={handleLoadRoute} />
 
       {/* Save route dialog — shown after trip ends if user is logged in */}
       {showSaveDialog && optimizeResult && (

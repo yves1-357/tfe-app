@@ -45,4 +45,5 @@ export interface SavedRouteItem {
   total_duration_sec: number | null;
   total_distance_m: number | null;
   stops_json: SavedRouteStop[];
+  optimized_order: number[];
 }

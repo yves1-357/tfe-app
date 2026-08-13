@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr, field_validator
+from pydantic import BaseModel, EmailStr, field_validator, model_validator
 from typing import List
 from datetime import datetime
 
@@ -112,5 +112,22 @@ class SavedRouteRead(BaseModel):
     total_duration_sec: int | None = None
     total_distance_m: int | None = None
     stops_json: list
+    optimized_order: list[int] = []
 
     model_config = {"from_attributes": True}
+
+    @model_validator(mode='before')
+    @classmethod
+    def map_from_orm(cls, obj):
+        # quand on valide a SQLAlchemy ORM instance, remap optimized_order_json → optimized_order
+        if hasattr(obj, 'optimized_order_json'):
+            return {
+                'id': obj.id,
+                'name': obj.name,
+                'created_at': obj.created_at,
+                'total_duration_sec': obj.total_duration_sec,
+                'total_distance_m': obj.total_distance_m,
+                'stops_json': obj.stops_json,
+                'optimized_order': obj.optimized_order_json or [],
+            }
+        return obj

@@ -8,7 +8,7 @@ router = APIRouter(prefix="/optimize", tags=["optimize"])
 
 
 @router.post("", response_model=OptimizeResponse)
-@limiter.limit("3/minute")
+@limiter.limit("30/minute")
 async def optimize_route(request: Request,req: OptimizeRequest):
     """
     Optimise l'ordre des stops via l'algorithme TSP (OR-Tools).

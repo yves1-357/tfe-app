@@ -13,6 +13,7 @@ import type { AuthUser, SavedRouteItem } from '@/types';
 interface SideMenuProps {
   isOpen: boolean;
   onClose: () => void;
+  onLoadRoute?: (route: SavedRouteItem) => void;
 }
 
 interface MenuItemProps {
@@ -69,7 +70,7 @@ function getInitials(email: string): string {
   return beforeAt.slice(0, 2).toUpperCase() || 'US';
 }
 
-export default function SideMenu({ isOpen, onClose }: SideMenuProps) {
+export default function SideMenu({ isOpen, onClose, onLoadRoute }: SideMenuProps) {
   const [userPanelOpen, setUserPanelOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [authModalMode, setAuthModalMode] = useState<'login' | 'register' | null>(null);
@@ -334,52 +335,69 @@ export default function SideMenu({ isOpen, onClose }: SideMenuProps) {
                       const orderedStops = [...route.stops_json].sort((a, b) => a.order - b.order);
                       return (
                         <li key={route.id} className="px-4 py-3">
-                          <div className="flex items-start justify-between gap-2">
-                            <div className="flex-1 min-w-0">
-                              <p className="text-[13px] font-semibold text-1 truncate">{route.name}</p>
-                              <p className="text-[11px] text-3 mt-0.5">{formatDate(route.created_at)}</p>
+                          {/* Clickable card area — excludes delete button */}
+                          <button
+                            type="button"
+                            onClick={() => { onLoadRoute?.(route); onClose(); }}
+                            className="press-effect w-full text-left rounded-xl -mx-1 px-1 py-0.5 hover:bg-white/5 transition-colors"
+                          >
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="flex-1 min-w-0">
+                                <p className="text-[13px] font-semibold text-1 truncate">{route.name}</p>
+                                <p className="text-[11px] text-3 mt-0.5">{formatDate(route.created_at)}</p>
+                              </div>
+                              <span className="flex-shrink-0 text-blue-400 text-[10px] font-semibold flex items-center gap-0.5 mt-1">
+                                Charger
+                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                </svg>
+                              </span>
                             </div>
+                            <ol className="mt-2 space-y-0.5">
+                              {orderedStops.map((stop, idx) => (
+                                <li key={idx} className="flex items-start gap-2">
+                                  <span className="flex-shrink-0 w-4 h-4 mt-0.5 rounded-full bg-blue-600/20 text-blue-400 text-[9px] font-bold flex items-center justify-center">
+                                    {idx + 1}
+                                  </span>
+                                  <span className="text-[11px] text-2 leading-tight">{stop.address}</span>
+                                </li>
+                              ))}
+                            </ol>
+                            {(route.total_duration_sec != null || route.total_distance_m != null) && (
+                              <div className="flex gap-3 mt-2 pt-2 border-t border-token">
+                                {route.total_duration_sec != null && (
+                                  <span className="text-[10px] text-3 flex items-center gap-1">
+                                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                    {formatDuration(route.total_duration_sec)}
+                                  </span>
+                                )}
+                                {route.total_distance_m != null && (
+                                  <span className="text-[10px] text-3 flex items-center gap-1">
+                                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+                                    </svg>
+                                    {formatDistance(route.total_distance_m)}
+                                  </span>
+                                )}
+                              </div>
+                            )}
+                          </button>
+                          {/* Delete button outside the clickable card */}
+                          <div className="flex justify-end mt-1">
                             <button
                               type="button"
                               onClick={() => handleDeleteRoute(route.id)}
-                              className="press-effect flex-shrink-0 w-7 h-7 flex items-center justify-center rounded-lg text-red-400 hover:bg-red-500/15 transition-colors"
+                              className="press-effect flex items-center gap-1 px-2 py-1 rounded-lg text-red-400 hover:bg-red-500/15 transition-colors"
                               aria-label="Supprimer"
                             >
-                              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                               </svg>
+                              <span className="text-[10px] font-medium">Supprimer</span>
                             </button>
                           </div>
-                          <ol className="mt-2 space-y-0.5">
-                            {orderedStops.map((stop, idx) => (
-                              <li key={idx} className="flex items-start gap-2">
-                                <span className="flex-shrink-0 w-4 h-4 mt-0.5 rounded-full bg-blue-600/20 text-blue-400 text-[9px] font-bold flex items-center justify-center">
-                                  {idx + 1}
-                                </span>
-                                <span className="text-[11px] text-2 leading-tight">{stop.address}</span>
-                              </li>
-                            ))}
-                          </ol>
-                          {(route.total_duration_sec != null || route.total_distance_m != null) && (
-                            <div className="flex gap-3 mt-2 pt-2 border-t border-token">
-                              {route.total_duration_sec != null && (
-                                <span className="text-[10px] text-3 flex items-center gap-1">
-                                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                  </svg>
-                                  {formatDuration(route.total_duration_sec)}
-                                </span>
-                              )}
-                              {route.total_distance_m != null && (
-                                <span className="text-[10px] text-3 flex items-center gap-1">
-                                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
-                                  </svg>
-                                  {formatDistance(route.total_distance_m)}
-                                </span>
-                              )}
-                            </div>
-                          )}
                         </li>
                       );
                     })}
