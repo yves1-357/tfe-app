@@ -173,7 +173,7 @@ export default function BottomPanel({ children, stopsCount, stops = [], onOptimi
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                 </svg>
               )}
-              <span>{isOptimizing ? 'Optimisation...' : 'Optimize Route'}</span>
+              <span>{isOptimizing ? 'Optimizing...' : 'Optimize Route'}</span>
             </button>
 
             {/* Erreur */}
@@ -190,13 +190,13 @@ export default function BottomPanel({ children, stopsCount, stops = [], onOptimi
                     <span className="flex-shrink-0 w-5 h-5 rounded-full bg-blue-500 flex items-center justify-center">
                       <svg viewBox="0 0 24 24" className="w-3 h-3" fill="white"><circle cx="12" cy="12" r="4"/></svg>
                     </span>
-                    <p className="text-xs text-2">Depuis <span className="font-semibold text-1">votre position</span> → {stops[0]?.address.split(',')[0]}</p>
+                    <p className="text-xs text-2">From <span className="font-semibold text-1">your location</span> → {stops[0]?.address.split(',')[0]}</p>
                   </div>
                 ) : stops[0] ? (
                   <div className="glass-soft rounded-2xl px-4 py-2.5 flex items-center gap-2">
                     <span className="flex-shrink-0 w-5 h-5 rounded-full bg-green-500 text-white text-[10px] font-bold flex items-center justify-center">1</span>
                     <p className="text-xs text-1 truncate">
-                      <span className="text-2">Commencer par&nbsp;</span>
+                      <span className="text-2">Start from&nbsp;</span>
                       <span className="font-semibold">{stops[0].address.split(',')[0]}</span>
                     </p>
                   </div>
@@ -220,7 +220,7 @@ export default function BottomPanel({ children, stopsCount, stops = [], onOptimi
                 {/* Durée + Distance */}
                 <div className="glass-soft rounded-2xl px-4 py-3 flex items-center gap-4">
                   <div className="flex-1 text-center">
-                    <p className="text-[11px] text-2 mb-0.5">Durée</p>
+                    <p className="text-[11px] text-2 mb-0.5">Duration</p>
                     <p className="text-sm font-semibold text-1">{formatDuration(routeResult.total_duration_sec)}</p>
                   </div>
                   <div className="w-px h-7 bg-white/10" />
