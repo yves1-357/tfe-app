@@ -140,7 +140,7 @@ export default function SideMenu({ isOpen, onClose, onLoadRoute }: SideMenuProps
       const routes = await getSavedRoutes();
       setSavedRoutes(routes);
     } catch (err) {
-      setRoutesError(err instanceof Error ? err.message : 'Erreur de chargement');
+      setRoutesError(err instanceof Error ? err.message : 'Loading error');
     } finally {
       setIsLoadingRoutes(false);
     }
@@ -305,7 +305,7 @@ export default function SideMenu({ isOpen, onClose, onLoadRoute }: SideMenuProps
               <div className="glass-soft mx-3 my-1 rounded-2xl animate-fade-in-up overflow-hidden">
                 {!hasAuthToken() ? (
                   <div className="px-4 py-3.5 space-y-2.5">
-                    <p className="text-[12px] text-2">Connectez-vous pour voir vos routes sauvegardées.</p>
+                    <p className="text-[12px] text-2">Log in to see your saved routes.</p>
                     <div className="flex gap-2">
                       <button
                         type="button"
@@ -324,11 +324,11 @@ export default function SideMenu({ isOpen, onClose, onLoadRoute }: SideMenuProps
                     </div>
                   </div>
                 ) : isLoadingRoutes ? (
-                  <p className="px-4 py-3.5 text-[12px] text-2">Chargement...</p>
+                  <p className="px-4 py-3.5 text-[12px] text-2">Loading...</p>
                 ) : routesError ? (
                   <p className="px-4 py-3.5 text-[12px] text-red-400">{routesError}</p>
                 ) : savedRoutes.length === 0 ? (
-                  <p className="px-4 py-3.5 text-[12px] text-2">Aucune route sauvegardée pour l&apos;instant.</p>
+                  <p className="px-4 py-3.5 text-[12px] text-2">No saved routes yet.</p>
                 ) : (
                   <ul className="divide-y divide-token">
                     {savedRoutes.map((route) => {
@@ -347,7 +347,7 @@ export default function SideMenu({ isOpen, onClose, onLoadRoute }: SideMenuProps
                                 <p className="text-[11px] text-3 mt-0.5">{formatDate(route.created_at)}</p>
                               </div>
                               <span className="flex-shrink-0 text-blue-400 text-[10px] font-semibold flex items-center gap-0.5 mt-1">
-                                Charger
+                                Load
                                 <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                                 </svg>
@@ -390,12 +390,12 @@ export default function SideMenu({ isOpen, onClose, onLoadRoute }: SideMenuProps
                               type="button"
                               onClick={() => handleDeleteRoute(route.id)}
                               className="press-effect flex items-center gap-1 px-2 py-1 rounded-lg text-red-400 hover:bg-red-500/15 transition-colors"
-                              aria-label="Supprimer"
+                              aria-label="Delete"
                             >
                               <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                               </svg>
-                              <span className="text-[10px] font-medium">Supprimer</span>
+                              <span className="text-[10px] font-medium">Delete</span>
                             </button>
                           </div>
                         </li>

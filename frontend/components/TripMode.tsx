@@ -3,6 +3,12 @@
 import { Stop } from '@/types';
 import { buildPointToPointUrl, buildWazeUrl } from '@/lib/deep-links';
 
+function getOrdinal(n: number): string {
+  const s = ['th', 'st', 'nd', 'rd'];
+  const v = n % 100;
+  return n + (s[(v - 20) % 10] || s[v] || s[0]);
+}
+
 interface TripModeProps {
   stops: Stop[];
   currentIndex: number;
@@ -42,7 +48,7 @@ export default function TripMode({ stops, currentIndex, userLocation, onNext, on
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-            <span className="text-xs font-semibold text-2 uppercase tracking-wider">Trajet en cours</span>
+            <span className="text-xs font-semibold text-2 uppercase tracking-wider">Trip in progress</span>
           </div>
           <span className="text-xs text-2 glass-soft px-2.5 py-1 rounded-full">
             {progress} / {total}
@@ -51,8 +57,8 @@ export default function TripMode({ stops, currentIndex, userLocation, onNext, on
 
         {/* Stop courant */}
         <div className="glass-soft rounded-2xl px-4 py-3.5 border border-blue-400/30">
-          <p className="text-[11px] text-blue-300 font-semibold uppercase tracking-wider mb-1">
-            Stop actuel
+          <p className="text-[11px] text-blue-300 font-semibold tracking-wider mb-1">
+            {getOrdinal(progress)} stop
           </p>
           <div className="flex items-start gap-2.5">
             <span className="flex-shrink-0 mt-0.5 w-6 h-6 rounded-full bg-blue-500 text-white text-[11px] font-bold flex items-center justify-center shadow-md shadow-blue-900/40">
@@ -69,7 +75,7 @@ export default function TripMode({ stops, currentIndex, userLocation, onNext, on
               {progress + 1}
             </span>
             <div className="flex-1 min-w-0">
-              <p className="text-[11px] text-2">Prochain arrêt</p>
+              <p className="text-[11px] text-2">Up next</p>
               <p className="text-[13px] text-1 truncate">{next.address.split(',')[0]}</p>
             </div>
           </div>
@@ -111,7 +117,7 @@ export default function TripMode({ stops, currentIndex, userLocation, onNext, on
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
             </svg>
-            Trajet terminé !
+            Trip completed!
           </button>
         ) : (
           <div className="flex gap-2">
@@ -123,13 +129,13 @@ export default function TripMode({ stops, currentIndex, userLocation, onNext, on
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
-              J&apos;y suis
+              Arrived
             </button>
             <button
               type="button"
               onClick={onStop}
               className="press-effect px-4 py-4 glass-soft hover:bg-white/10 text-2 rounded-2xl transition-colors text-sm"
-              aria-label="Arrêter le trajet"
+              aria-label="Stop trip"
             >
               ✕
             </button>
