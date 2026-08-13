@@ -7,11 +7,21 @@ from routers.auth_router import router as auth_router
 from routers.optimize_router import router as optimize_router
 from routers.routes_router import router as routes_router
 
+
+# Les 3 imports  pour slowapi :
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from limiter import limiter
+
 app = FastAPI(
     title="NextStop API",
     description="Backend de l'application de planification de tournées multi-arrêts",
     version="0.1.0",
 )
+
+# attache limiteur a l'application pour gère l'erreur 429
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 _origins = list({
     FRONTEND_ORIGIN,

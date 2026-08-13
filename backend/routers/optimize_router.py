@@ -1,16 +1,18 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 from schemas import OptimizeRequest, OptimizeResponse
 from services import google_maps
 from services import optimizer
+from limiter import limiter
 
 router = APIRouter(prefix="/optimize", tags=["optimize"])
 
 
 @router.post("", response_model=OptimizeResponse)
-async def optimize_route(req: OptimizeRequest):
+@limiter.limit("3/minute")
+async def optimize_route(request: Request,req: OptimizeRequest):
     """
     Optimise l'ordre des stops via l'algorithme TSP (OR-Tools).
-    Nécessite au minimum 2 stops et au maximum 25 stops.
+    Nécessite au minimum 2 stops et au maximum 15 stops.
 
     Flow :
     1. Calcule la matrice N×N de durées via Google Routes API
