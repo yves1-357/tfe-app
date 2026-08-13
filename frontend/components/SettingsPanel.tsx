@@ -41,6 +41,7 @@ function Row({ icon, title, description, action, onClick }: RowProps) {
 
 export default function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
   const [showPrivacy, setShowPrivacy] = useState(false);
+  const [showInstall, setShowInstall] = useState(false);
 
   // Close on Escape
   useEffect(() => {
@@ -48,12 +49,13 @@ export default function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         if (showPrivacy) setShowPrivacy(false);
+        else if (showInstall) setShowInstall(false);
         else onClose();
       }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [isOpen, onClose, showPrivacy]);
+  }, [isOpen, onClose, showPrivacy, showInstall]);
 
   if (!isOpen) return null;
 
@@ -99,9 +101,12 @@ export default function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
                 title="Install app"
                 description="Add NextStop to your home screen"
                 action={
-                  <button type="button" className="press-effect px-3.5 py-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded-lg">
+                  <button type="button" 
+                  onClick={() => setShowInstall(true)}
+                  className="press-effect px-3.5 py-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded-lg">
                     Install
                   </button>
+                  
                 }
               />
               <Row
@@ -151,15 +156,15 @@ export default function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
 
             {/* Section: Privacy */}
             <div className="mb-2">
-              <p className="px-4 mb-1 text-[11px] font-semibold tracking-[0.12em] uppercase text-3">Confidentialité</p>
+              <p className="px-4 mb-1 text-[11px] font-semibold tracking-[0.12em] uppercase text-3">Privacy</p>
               <Row
                 icon={
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                   </svg>
                 }
-                title="Protection des données (RGPD)"
-                description="Vos droits et données collectées"
+                title="Data protection (GDPR)"
+                description="Your rights and collected data"
                 onClick={() => setShowPrivacy(true)}
               />
             </div>
@@ -188,13 +193,13 @@ export default function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                   </svg>
                 </span>
-                <h2 className="text-[17px] font-bold text-1">Protection des données</h2>
+                <h2 className="text-[17px] font-bold text-1">Data protection</h2>
               </div>
               <button
                 type="button"
                 onClick={() => setShowPrivacy(false)}
                 className="hover-surface press-effect w-9 h-9 flex items-center justify-center rounded-xl text-2"
-                aria-label="Fermer"
+                aria-label="Close"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -207,56 +212,156 @@ export default function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
 
               {/* Données collectées */}
               <section>
-                <h3 className="text-[12px] font-semibold tracking-[0.1em] uppercase text-blue-400 mb-2">Données collectées</h3>
+                <h3 className="text-[12px] font-semibold tracking-[0.1em] uppercase text-blue-400 mb-2">Data collected</h3>
                 <p className="text-3 mb-2">
-                  <strong className="text-2">Sans compte :</strong> aucune donnée personnelle n&apos;est collectée ni stockée. Aucun cookie de suivi.
+                  <strong className="text-2">Without an account:</strong> no personal data is collected or stored. No tracking cookies.
                 </p>
                 <p className="text-3">
-                  <strong className="text-2">Avec un compte :</strong> adresse courriel, empreinte bcrypt du mot de passe (jamais le mot de passe en clair), date de création du compte, et trajets sauvegardés.
+                  <strong className="text-2">With an account:</strong> email address, bcrypt hash of the password (never the password in plain text), account creation date, and saved routes.
                 </p>
               </section>
 
               {/* Vos droits */}
               <section>
-                <h3 className="text-[12px] font-semibold tracking-[0.1em] uppercase text-blue-400 mb-2">Vos droits (RGPD)</h3>
+                <h3 className="text-[12px] font-semibold tracking-[0.1em] uppercase text-blue-400 mb-2">Your rights (GDPR)</h3>
                 <ul className="space-y-1.5 text-3">
-                  <li><span className="text-2 font-medium">Accès :</span> consultez vos données depuis les paramètres du compte.</li>
-                  <li><span className="text-2 font-medium">Rectification :</span> modifiez votre courriel ou mot de passe à tout moment.</li>
-                  <li><span className="text-2 font-medium">Effacement :</span> supprimez votre compte en un clic, toutes vos données sont immédiatement effacées, sans archive.</li>
-                  <li><span className="text-2 font-medium">Opposition :</span> toutes les fonctionnalités principales sont utilisables sans compte.</li>
+                  <li><span className="text-2 font-medium">Access:</span> view your data from the account settings.</li>
+                  <li><span className="text-2 font-medium">Rectification:</span> update your email or password at any time.</li>
+                  <li><span className="text-2 font-medium">Erasure:</span> delete your account in one click — all your data is immediately and permanently removed, with no archive.</li>
+                  <li><span className="text-2 font-medium">Objection:</span> all core features are usable without an account.</li>
                 </ul>
               </section>
 
               {/* Sécurité */}
               <section>
-                <h3 className="text-[12px] font-semibold tracking-[0.1em] uppercase text-blue-400 mb-2">Sécurité</h3>
+                <h3 className="text-[12px] font-semibold tracking-[0.1em] uppercase text-blue-400 mb-2">Security</h3>
                 <p className="text-3">
-                  Les communications sont chiffrées (HTTPS/TLS). Les mots de passe sont hachés avec bcrypt. Aucune donnée sensible n&apos;apparaît dans les journaux.
+                  Communications are encrypted (HTTPS/TLS). Passwords are hashed with bcrypt. No sensitive data appears in logs.
                 </p>
               </section>
 
               {/* Hébergement */}
               <section>
-                <h3 className="text-[12px] font-semibold tracking-[0.1em] uppercase text-blue-400 mb-2">Hébergement</h3>
+                <h3 className="text-[12px] font-semibold tracking-[0.1em] uppercase text-blue-400 mb-2">Hosting</h3>
                 <p className="text-3">
-                  Base de données hébergée sur <strong className="text-2">Neon</strong> (EU-West, Frankfurt) dans l&apos;Union européenne, conformément au RGPD.
+                  Database hosted on <strong className="text-2">Neon</strong> (EU-West, Frankfurt) within the European Union, in compliance with GDPR.
                 </p>
               </section>
 
               {/* Contact */}
               <div className="glass-soft rounded-2xl px-4 py-3 border border-blue-400/20">
                 <p className="text-[12px] text-3">
-                  <strong className="text-2">Contact : </strong>
-                  Pour toute question relative à vos données, contactez l&apos;administrateur.
+                  <strong className="text-2">Contact: </strong>
+                  For any questions regarding your data, please contact the administrator.
                 </p>
               </div>
             </div>
           </div>
         </div>
       )}
+
+            {/* Install Modal */}
+      {showInstall && (
+        <InstallInstructionsModal onClose={() => setShowInstall(false)} />
+      )}
+      
     </>
   );
 }
+
+/* ---------------- Install Instructions Modal ---------------- */
+type BrowserTab = 'chrome' | 'safari' | 'edge';
+
+function detectBrowser(): BrowserTab {
+  if (typeof navigator === 'undefined') return 'chrome';
+  const ua = navigator.userAgent;
+  if (/Edg\//.test(ua)) return 'edge';
+  if (/Safari/.test(ua) && !/Chrome/.test(ua)) return 'safari';
+  return 'chrome';
+}
+
+function InstallInstructionsModal({ onClose }: { onClose: () => void }) {
+  const [tab, setTab] = useState<BrowserTab>(detectBrowser());
+
+  const tabs: { id: BrowserTab; label: string }[] = [
+    { id: 'chrome', label: 'Chrome' },
+    { id: 'safari', label: 'Safari' },
+    { id: 'edge', label: 'Edge' },
+  ];
+
+  return (
+    <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 animate-fade-in-up">
+      <div
+        className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+        onClick={onClose}
+        aria-hidden="true"
+      />
+      <div className="relative w-full max-w-md">
+        <div className=" bg-black/70 pointer-events-none absolute -inset-2 rounded-[32px]" />
+
+        <div className="relative px-5 pt-5 pb-5">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-[17px] font-bold  text-1">Download NextStop</h2>
+            <button
+              type="button"
+              onClick={onClose}
+              className="hover-surface press-effect w-9 h-9 flex items-center justify-center rounded-xl text-2"
+              aria-label="Close"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+
+          <div className="flex gap-1 mb-4 p-1 rounded-xl input-surface">
+            {tabs.map((t) => (
+              <button
+                key={t.id}
+                type="button"
+                onClick={() => setTab(t.id)}
+                className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition-colors ${
+                  tab === t.id ? 'bg-blue-600 text-white' : 'text-2 hover-surface'
+                }`}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
+
+          <div className="text-[13px] text-2 leading-relaxed">
+            {tab === 'chrome' && (
+              <ol className="list-decimal list-inside space-y-1.5">
+                <li>Click the install icon (&#8853;) in the address bar</li>
+                <li>Or open the ⋮ menu in the top right</li>
+                <li>Select <strong className="text-1">Install NextStop</strong></li>
+                <li>Confirm in the dialog that appears</li>
+              </ol>
+            )}
+
+            {tab === 'safari' && (
+              <ol className="list-decimal list-inside space-y-1.5">
+                <li>Tap the <strong className="text-1">Share</strong> button (square with arrow)</li>
+                <li>Scroll down and select <strong className="text-1">Add to Home Screen</strong></li>
+                <li>Tap <strong className="text-1">Add</strong> in the top right</li>
+              </ol>
+            )}
+
+            {tab === 'edge' && (
+              <ol className="list-decimal list-inside space-y-1.5">
+                <li>Click the Apps icon (&#8853;) in the address bar</li>
+                <li>Or open the ⋯ menu in the top right</li>
+                <li>Go to <strong className="text-1">Apps</strong> → <strong className="text-1">Install this site as an app</strong></li>
+                <li>Confirm the installation</li>
+              </ol>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 
 /* ---------------- Local Toggle ---------------- */
 function Toggle({ initial }: { initial: boolean }) {
