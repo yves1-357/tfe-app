@@ -82,13 +82,13 @@ export default function DeleteAccountModal({ isOpen, onClose, onConfirm }: Delet
 
           {/* Warning text */}
           <p className="text-[13px] text-2 leading-relaxed">
-            Cette action est <span className="font-semibold text-red-400">irréversible</span>. Toutes vos données seront supprimées définitivement (trajets, compte).
+            This action is <span className="font-semibold text-red-400">irreversible</span>. All your data will be permanently deleted (routes, account).
           </p>
 
           {/* Confirmation input */}
           <div>
             <label htmlFor="delete-confirm-input" className="block text-[12px] text-2 mb-1.5">
-              Tapez <span className="font-mono font-semibold text-red-400">{CONFIRMATION_WORD}</span> pour confirmer
+              Type <span className="font-mono font-semibold text-red-400">{CONFIRMATION_WORD}</span> to confirm
             </label>
             <input
               id="delete-confirm-input"
