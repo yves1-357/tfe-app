@@ -122,12 +122,12 @@ function MapController({ location, status, onRetry }: MapControllerProps) {
   const isDenied = status === 'denied' || status === 'unavailable';
   const tooltip =
     status === 'granted' && location
-      ? 'Recentrer sur ma position'
+      ? 'Center on my location'
       : isLoading
-      ? 'Recherche de votre position…'
+      ? 'Searching for your location…'
       : status === 'denied'
-      ? 'Géolocalisation refusée — cliquer pour voir comment réactiver'
-      : 'Géolocalisation indisponible — cliquer pour réessayer';
+      ? 'Location denied — click to see how to re-enable'
+      : 'Location unavailable — click to retry';
 
   return (
     <>
@@ -173,7 +173,7 @@ function MapController({ location, status, onRetry }: MapControllerProps) {
         >
           <div className="flex items-start justify-between gap-3 mb-2">
             <h3 id="geoloc-help-title" className="font-semibold">
-              Réactiver la géolocalisation
+              Reactivate location
             </h3>
             <button
               type="button"
@@ -185,16 +185,16 @@ function MapController({ location, status, onRetry }: MapControllerProps) {
             </button>
           </div>
           <p className="text-2 mb-3">
-            Votre navigateur bloque la géolocalisation pour ce site. Pour la réactiver :
+            Your browser is blocking location access for this site. To re-enable it:
           </p>
           <ol className="list-decimal list-inside space-y-1 text-2 mb-3">
-            <li>Cliquez sur l&apos;icône <b>cadenas</b> dans la barre d&apos;adresse</li>
-            <li>Trouvez <b>Localisation</b> dans les autorisations</li>
-            <li>Choisissez <b>Autoriser</b> ou <b>Demander</b></li>
-            <li>Rechargez la page</li>
+            <li>Click the <b>lock</b> icon in the address bar</li>
+            <li>Find <b>Location</b> in the permissions</li>
+            <li>Select <b>Allow</b> or <b>Ask</b></li>
+            <li>Reload the page</li>
           </ol>
           <p className="text-xs text-2 opacity-70">
-            La carte reste utilisable manuellement, mais elle ne pourra pas se centrer sur vous.
+            The map still works manually, but it won&apos;t be able to center on your position.
           </p>
         </div>
       )}
@@ -223,7 +223,7 @@ export default function MapContainer({ stops = [], polyline = null, currentStopI
         className="w-full h-full"
       >
         {location && (
-          <Marker position={location} icon={USER_DOT_SVG} title="Vous êtes ici" />
+          <Marker position={location} icon={USER_DOT_SVG} title="You are here" />
         )}
         {stops.map((stop, index) =>
           stop.lat !== undefined && stop.lng !== undefined ? (
@@ -248,7 +248,7 @@ export default function MapContainer({ stops = [], polyline = null, currentStopI
 
       {status === 'loading' && (
         <div className="absolute top-4 left-1/2 -translate-x-1/2 glass-soft px-3 py-1.5 rounded-full text-xs text-2 z-10">
-          Recherche de votre position…
+          Searching for your location…
         </div>
       )}
     </div>
