@@ -80,20 +80,20 @@ export default function SaveRouteDialog({ isOpen, stops, optimizeResult, onSave,
               </svg>
             </span>
             <div>
-              <h2 className="lg-text text-base font-bold text-1">Trajet terminé !</h2>
-              <p className="text-[12px] text-2">Voulez-vous sauvegarder cette route optimisée ?</p>
+              <h2 className="lg-text text-base font-bold text-1">Trip completed!</h2>
+              <p className="text-[12px] text-2">Would you like to save this optimized route?</p>
             </div>
           </div>
 
           {/* Route summary */}
           <div className="glass-soft rounded-2xl px-4 py-3 flex items-center gap-4">
             <div className="flex-1 text-center">
-              <p className="text-[10px] text-2 mb-0.5">Arrêts</p>
+              <p className="text-[10px] text-2 mb-0.5">Stops</p>
               <p className="text-sm font-semibold text-1">{stops.length}</p>
             </div>
             <div className="w-px h-7 bg-white/10" />
             <div className="flex-1 text-center">
-              <p className="text-[10px] text-2 mb-0.5">Durée</p>
+              <p className="text-[10px] text-2 mb-0.5">Duration</p>
               <p className="text-sm font-semibold text-1">{formatDuration(optimizeResult.total_duration_sec)}</p>
             </div>
             <div className="w-px h-7 bg-white/10" />
@@ -106,7 +106,7 @@ export default function SaveRouteDialog({ isOpen, stops, optimizeResult, onSave,
           {/* Name input */}
           <div>
             <label htmlFor="route-name-input" className="block text-[12px] text-2 mb-1.5">
-              Nom de la route
+              Route name
             </label>
             <input
               id="route-name-input"
@@ -128,7 +128,7 @@ export default function SaveRouteDialog({ isOpen, stops, optimizeResult, onSave,
               onClick={onSkip}
               className="press-effect flex-1 py-3 rounded-xl glass-soft hover:bg-white/10 text-sm font-semibold text-2 transition-colors"
             >
-              Non merci
+              Skip
             </button>
             <button
               type="button"
@@ -138,7 +138,7 @@ export default function SaveRouteDialog({ isOpen, stops, optimizeResult, onSave,
                 loading ? 'bg-blue-600/50 cursor-wait' : 'bg-blue-600 hover:bg-blue-500'
               }`}
             >
-              {loading ? 'Sauvegarde…' : 'Sauvegarder'}
+              {loading ? 'Saving…' : 'Save'}
             </button>
           </div>
         </div>
