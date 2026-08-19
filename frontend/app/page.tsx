@@ -135,7 +135,7 @@ export default function Home() {
     try {
       // Tente de récupérer la position GPS en cache (instantané, déjà demandée par MapContainer)
       let gpsStart: { lat: number; lng: number } | null = null;
-      if (typeof navigator !== 'undefined' && navigator.geolocation) {
+      if (stops.length < 15 && typeof navigator !== 'undefined' && navigator.geolocation) {
         gpsStart = await new Promise<{ lat: number; lng: number } | null>((resolve) => {
           navigator.geolocation.getCurrentPosition(
             (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
