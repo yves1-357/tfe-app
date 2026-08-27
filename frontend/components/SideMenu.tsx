@@ -330,7 +330,7 @@ export default function SideMenu({ isOpen, onClose, onLoadRoute }: SideMenuProps
                 ) : savedRoutes.length === 0 ? (
                   <p className="px-4 py-3.5 text-[12px] text-2">No saved routes yet.</p>
                 ) : (
-                  <ul className="divide-y divide-token">
+                  <ul className="divide-y divide-token max-h-[280px] overflow-y-auto overscroll-contain">
                     {savedRoutes.map((route) => {
                       const orderedStops = [...route.stops_json].sort((a, b) => a.order - b.order);
                       return (
