@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { APIProvider } from '@vis.gl/react-google-maps';
 import MapContainer from '@/components/MapContainer';
 import BottomPanel from '@/components/BottomPanel';
@@ -11,7 +11,7 @@ import TripMode from '@/components/TripMode';
 import SaveRouteDialog from '@/components/SaveRouteDialog';
 import { Stop, OptimizeResponse } from '@/types';
 import type { SavedRouteItem } from '@/types';
-import { optimizeRoute, saveRoute } from '@/lib/api';
+import { optimizeRoute, pingHealth, saveRoute } from '@/lib/api';
 import { hasAuthToken } from '@/lib/auth';
 
 export default function Home() {
@@ -26,6 +26,12 @@ export default function Home() {
   const [currentStopIndex, setCurrentStopIndex] = useState(0);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [showSaveDialog, setShowSaveDialog] = useState(false);
+
+  // Réveil préventif du backend Render (cold start après 15 min d'inactivit.
+  // Lancé une seule fois au chargement, pendant que l'utilisateur saisit ses arrêts.
+  useEffect(() => {
+    pingHealth();
+  }, []);
 
   const handleAddStop = (place: { address: string; lat: number; lng: number; placeId: string }) => {
     const newStop: Stop = {

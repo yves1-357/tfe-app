@@ -3,6 +3,20 @@ import { getAuthToken } from '@/lib/auth';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000';
 
+/**
+ * Ping GET /health au chargement de l'app pour anticiper le cold start
+ * du backend Render (mise en veille après 15 min.
+ * l'utilisateur configure ses arrêts pendant que le service se réveille.
+ */
+export async function pingHealth(): Promise<void> {
+  try {
+    await fetch(`${API_URL}/health`, { method: 'GET' });
+  } catch {
+    // Backend probablement encore endormi ou injoignable — sans conséquence,
+    // le prochain appel réel (optimize, auth...) réessaiera normalement.
+  }
+}
+
 export async function optimizeRoute(stops: Stop[]): Promise<OptimizeResponse> {
   const res = await fetch(`${API_URL}/optimize`, {
     method: 'POST',
