@@ -2,7 +2,7 @@
 
 Architecture de production :
 ```
-Vercel (Next.js frontend)  →  Render (FastAPI backend)  →  Supabase (PostgreSQL)
+Vercel (Next.js frontend)  →  Render (FastAPI backend)  →  Neon (PostgreSQL)
 ```
 
 ---
@@ -32,12 +32,12 @@ git push origin main
 
 ---
 
-## Étape C — Base de données sur Supabase
+## Étape C — Base de données sur Neon
 
-1. https://supabase.com → New project → region : Frankfurt
-2. Settings → Database → **Connection string → URI** → copier
+1. https://neon.tech → New project → region : EU-West (Frankfurt)
+2. Dashboard → **Connection string** → copier (mode `require` SSL activé par défaut)
 3. La connection string ressemble à :
-   `postgresql+psycopg2://postgres.<project>:<password>@aws-0-eu-central-1.pooler.supabase.com:6543/postgres`
+   `postgresql+psycopg2://<user>:<password>@ep-xxx.eu-west-2.aws.neon.tech/neondb?sslmode=require`
 4. Garder cette valeur comme `DATABASE_URL` pour les étapes D et E
 
 ---
@@ -46,11 +46,11 @@ git push origin main
 
 ```powershell
 cd backend
-$env:DATABASE_URL = "postgresql+psycopg2://postgres.xxx:password@aws-...supabase.com:6543/postgres"
+$env:DATABASE_URL = "postgresql+psycopg2://<user>:<password>@ep-xxx.eu-west-2.aws.neon.tech/neondb?sslmode=require"
 .\venv\Scripts\python.exe -m alembic upgrade head
 ```
 
-Vérifier dans Supabase → Table Editor que les tables `users` et `saved_routes` existent.
+Vérifier dans Neon → Tables que `users` et `saved_routes` existent.
 
 ---
 
@@ -62,7 +62,7 @@ Vérifier dans Supabase → Table Editor que les tables `users` et `saved_routes
 4. Build command : `pip install -r requirements.txt`
 5. Start command : `uvicorn main:app --host 0.0.0.0 --port $PORT`
 6. Variables d'env à configurer sur Render :
-   - `DATABASE_URL` = connection string Supabase
+   - `DATABASE_URL` = connection string Neon
    - `GOOGLE_MAPS_API_KEY` = clé Google backend
    - `JWT_SECRET` = string aléatoire longue (`openssl rand -hex 32`)
    - `FRONTEND_ORIGIN` = `https://tfe-route-app.vercel.app`
@@ -86,7 +86,7 @@ Vérifier dans Supabase → Table Editor que les tables `users` et `saved_routes
 |---|---|---|
 | Vercel | `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` | Clé Google frontend |
 | Vercel | `NEXT_PUBLIC_API_URL` | URL Render |
-| Render | `DATABASE_URL` | Connection string Supabase |
+| Render | `DATABASE_URL` | Connection string Neon |
 | Render | `GOOGLE_MAPS_API_KEY` | Clé Google backend |
 | Render | `JWT_SECRET` | Secret JWT (32+ chars) |
 | Render | `FRONTEND_ORIGIN` | URL Vercel |
@@ -96,10 +96,11 @@ Vérifier dans Supabase → Table Editor que les tables `users` et `saved_routes
 ## Notes importantes
 
 - **Cold start Render** : le free tier s'endort après 15 min. Le premier appel prend ~30s.
-  → Solution : appel automatique à `/health` au mount de la page principale.
+  → Solution : appel automatique à `GET /health` au montage de la page principale
+  (`pingHealth()` dans `lib/api.ts`, déclenché depuis un `useEffect` dans `app/page.tsx`). implémenté
 - **CORS** : `FRONTEND_ORIGIN` doit correspondre exactement à l'URL Vercel (sans trailing slash).
-- **Alembic vs create_all** : en prod, Alembic gère les migrations. `create_all()` dans `main.py` est désactivé en prod via la variable `DATABASE_URL` qui pointe vers Supabase.
-- **Icônes PWA** : générer `icon-192.png` et `icon-512.png` depuis `frontend/public/icons/icon.svg` avant le déploiement final.
+- **Alembic vs create_all** : en prod, Alembic gère les migrations. `create_all()` dans `main.py` est désactivé en prod via la variable `DATABASE_URL` qui pointe vers Neon.
+- **Icônes PWA** : générer `icon-192.png` et `icon-512.png` depuis `frontend/public/icons/icon.svg` avant le déploiement final (actuellement absentes de `frontend/public/icons/`, alors que `manifest.webmanifest` les référence).
 
 ---
 
