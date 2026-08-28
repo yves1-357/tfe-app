@@ -405,15 +405,6 @@ export default function SideMenu({ isOpen, onClose, onLoadRoute }: SideMenuProps
                 )}
               </div>
             )}
-
-            <MenuItem
-              icon={
-                <svg className="w-[22px] h-[22px]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              }
-              label="Recents"
-            />
           </nav>
 
           {/* Preferences section */}
