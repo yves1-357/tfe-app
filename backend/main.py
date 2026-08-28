@@ -1,8 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from config import FRONTEND_ORIGIN
-from database import Base, engine
-import models
+import models  # noqa: F401 — enregistre les classes ORM (User, SavedRoute) sur Base
 from routers.auth_router import router as auth_router
 from routers.optimize_router import router as optimize_router
 from routers.routes_router import router as routes_router
@@ -41,12 +40,6 @@ app.add_middleware(
 app.include_router(optimize_router)
 app.include_router(auth_router)
 app.include_router(routes_router)
-
-
-@app.on_event("startup")
-def on_startup() -> None:
-    # Temporary bootstrap for S6; Alembic migration flow will replace this in S7.
-    Base.metadata.create_all(bind=engine)
 
 
 @app.get("/health", tags=["health"])
