@@ -1,9 +1,12 @@
+import logging
 import re
 import asyncio
 import httpx
 from typing import List, Tuple
 from config import GOOGLE_MAPS_API_KEY
 from schemas import StopIn
+
+logger = logging.getLogger(__name__)
 
 ROUTES_API_BASE = "https://routes.googleapis.com"
 _SEMAPHORE_SIZE = 10
@@ -42,8 +45,21 @@ async def _single_route_duration(
             routes = r.json().get("routes", [])
             if routes:
                 return _parse_seconds(routes[0].get("duration", "0s"))
-        except Exception:
-            pass
+            # Réponse 200 mais sans itinéraire trouvé par Google (ex: pas de route
+            # routière possible entre les deux points) comportement inchangé
+            # (999_999), seule la visibilité change.
+            logger.warning(
+                "Routes API: aucune route trouvée entre (%.5f,%.5f) et (%.5f,%.5f)",
+                origin.lat, origin.lng, destination.lat, destination.lng,
+            )
+        except Exception as exc:
+            # Comportement inchangé (fallback 999_999 pour ne pas faire échouer
+            # toute la matrice sur une seule paire) — on journalise simplement
+            # la cause pour pouvoir diagnostiquer un incident après coup.
+            logger.warning(
+                "Routes API: échec pour (%.5f,%.5f) -> (%.5f,%.5f): %s",
+                origin.lat, origin.lng, destination.lat, destination.lng, exc,
+            )
         return 999_999
 
 
