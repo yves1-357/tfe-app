@@ -30,7 +30,7 @@
   --hover: rgba(255, 255, 255, 0.07);
   --vignette: rgba(0, 0, 0, 0.12);
   /* liquid glass */
-  --lg-bg: linear-gradient(135deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.02));
+  --lg-bg: linear-gradient(135deg, rgba(18, 22, 32, 0.55), rgba(18, 22, 32, 0.40));
   --lg-border: rgba(255, 255, 255, 0.12);
   --lg-highlight: rgba(255, 255, 255, 0.22);
   --lg-shadow: rgba(0, 0, 0, 0.40);
@@ -54,7 +54,7 @@
   --hover: rgba(0, 0, 0, 0.05);
   --vignette: rgba(0, 0, 0, 0.04);
   /* liquid glass */
-  --lg-bg: linear-gradient(135deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0.10));
+  --lg-bg: linear-gradient(135deg, rgba(255, 255, 255, 0.62), rgba(255, 255, 255, 0.48));
   --lg-border: rgba(255, 255, 255, 0.70);
   --lg-highlight: rgba(255, 255, 255, 0.95);
   --lg-shadow: rgba(15, 23, 42, 0.18);
@@ -150,8 +150,8 @@ body {
    ============================================================ */
 .glass {
   background: var(--lg-bg);
-  -webkit-backdrop-filter: blur(40px) saturate(180%);
-  backdrop-filter: blur(40px) saturate(180%);
+  -webkit-backdrop-filter: blur(14px) saturate(180%);
+  backdrop-filter: blur(14px) saturate(180%);
   border: 0;
   box-shadow: none;
   /* Radial feather so the edge dissolves into the map (no rectangular boundary) */
@@ -161,11 +161,14 @@ body {
 
 /* Glass background layer: placed BEHIND the content as a separate sibling,
    slightly larger than the content box so its feathered edge falls outside
-   the visible area — no rectangular boundary around the panel. */
+   the visible area — no rectangular boundary around the panel.
+   La lisibilité du texte vient surtout de --lg-bg (fond suffisamment
+   couvrant, différent par thème) plutôt que d'un blur épais — sinon la
+   carte derrière devient méconnaissable au lieu de simplement dépolie. */
 .glass-bg {
   background: var(--lg-bg);
-  -webkit-backdrop-filter: blur(40px) saturate(180%);
-  backdrop-filter: blur(40px) saturate(180%);
+  -webkit-backdrop-filter: blur(14px) saturate(180%);
+  backdrop-filter: blur(14px) saturate(180%);
   -webkit-mask-image: radial-gradient(ellipse 95% 95% at 50% 50%, #000 55%, transparent 100%);
   mask-image: radial-gradient(ellipse 95% 95% at 50% 50%, #000 55%, transparent 100%);
 }
