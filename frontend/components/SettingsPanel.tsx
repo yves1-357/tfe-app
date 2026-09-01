@@ -15,6 +15,18 @@ interface RowProps {
   onClick?: () => void;
 }
 
+/** "Coming soon" pour une fonctionnalité annoncée mais pas encore branchée. */
+function ComingSoonBadge() {
+  return (
+    <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/15 border border-amber-400/30 text-amber-300 text-[11px] font-semibold whitespace-nowrap">
+      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+      Coming soon
+    </span>
+  );
+}
+
 function Row({ icon, title, description, action, onClick }: RowProps) {
   return (
     <div
@@ -117,7 +129,7 @@ export default function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
                 }
                 title="Notifications"
                 description="Get alerts for your routes"
-                action={<Toggle initial={false} />}
+                action={<ComingSoonBadge />}
               />
               <Row
                 icon={
@@ -226,9 +238,9 @@ export default function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
                 <h3 className="text-[12px] font-semibold tracking-[0.1em] uppercase text-blue-400 mb-2">Your rights (GDPR)</h3>
                 <ul className="space-y-1.5 text-3">
                   <li><span className="text-2 font-medium">Access:</span> view your data from the account settings.</li>
-                  <li><span className="text-2 font-medium">Rectification:</span> update your email or password at any time.</li>
-                  <li><span className="text-2 font-medium">Erasure:</span> delete your account in one click — all your data is immediately and permanently removed, with no archive.</li>
-                  <li><span className="text-2 font-medium">Objection:</span> all core features are usable without an account.</li>
+                  <li><span className="text-2 font-medium">Rectification:</span> changing your name or email is not yet available in the interface - contact the administrator to update your data.</li>
+                  <li><span className="text-2 font-medium">Erasure:</span> delete your account in one click - all your data is immediately and permanently removed, with no archive.</li>
+                  <li><span className="text-2 font-medium">Objection:</span> log out or delete your account at any time - all core features remain usable without an account.</li>
                 </ul>
               </section>
 

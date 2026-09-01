@@ -23,8 +23,13 @@ async def _single_route_duration(
     sem: asyncio.Semaphore,
     origin: StopIn,
     destination: StopIn,
+    pair_index: Tuple[int, int],
 ) -> int:
-    """Retourne la durée en secondes entre origin et destination."""
+    """Retourne la durée en secondes entre origin et destination.
+
+    pair_index identifie la paire (i, j) dans la matrice, uniquement pour le
+    diagnostic en log — aucune coordonnée GPS n'est journalisée.
+    """
     async with sem:
         payload = {
             "origin": {"location": {"latLng": {"latitude": origin.lat, "longitude": origin.lng}}},
@@ -48,18 +53,12 @@ async def _single_route_duration(
             # Réponse 200 mais sans itinéraire trouvé par Google (ex: pas de route
             # routière possible entre les deux points) comportement inchangé
             # (999_999), seule la visibilité change.
-            logger.warning(
-                "Routes API: aucune route trouvée entre (%.5f,%.5f) et (%.5f,%.5f)",
-                origin.lat, origin.lng, destination.lat, destination.lng,
-            )
+            logger.warning("Routes API: aucune route trouvée pour la paire %s", pair_index)
         except Exception as exc:
             # Comportement inchangé (fallback 999_999 pour ne pas faire échouer
             # toute la matrice sur une seule paire) — on journalise simplement
             # la cause pour pouvoir diagnostiquer un incident après coup.
-            logger.warning(
-                "Routes API: échec pour (%.5f,%.5f) -> (%.5f,%.5f): %s",
-                origin.lat, origin.lng, destination.lat, destination.lng, exc,
-            )
+            logger.warning("Routes API: échec pour la paire %s: %s", pair_index, exc)
         return 999_999
 
 
@@ -76,7 +75,7 @@ async def get_duration_matrix(stops: List[StopIn]) -> List[List[int]]:
     sem = asyncio.Semaphore(_SEMAPHORE_SIZE)
     async with httpx.AsyncClient(timeout=20.0) as client:
         results = await asyncio.gather(
-            *[_single_route_duration(client, sem, stops[i], stops[j]) for i, j in pairs]
+            *[_single_route_duration(client, sem, stops[i], stops[j], (i, j)) for i, j in pairs]
         )
 
     for (i, j), duration in zip(pairs, results):
