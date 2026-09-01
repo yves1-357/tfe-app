@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useInstallPrompt } from '@/hooks/useInstallPrompt';
 
 interface SettingsPanelProps {
   isOpen: boolean;
@@ -294,6 +295,23 @@ function detectBrowser(): BrowserTab {
 
 function InstallInstructionsModal({ onClose }: { onClose: () => void }) {
   const [tab, setTab] = useState<BrowserTab>(detectBrowser());
+  const { canInstall, triggerInstall } = useInstallPrompt();
+  const [attemptFailed, setAttemptFailed] = useState(false);
+
+  // Le prompt natif "beforeinstallprompt" n'est jamais émis par Safari
+  // (limitation d'Apple, pas contournable) le bouton n'a de sens que
+  // sur Chrome/Edge, là où canInstall peut réellement devenir true.
+  const nativeInstallAvailable = tab !== 'safari' && canInstall;
+
+  const handleInstallClick = () => {
+    if (nativeInstallAvailable) {
+      triggerInstall();
+    } else {
+      // Chrome/Edge, mais le navigateur n'a pas (encore) proposé le prompt
+      // natif — on ne le sait qu'après la tentative, pas par défaut.
+      setAttemptFailed(true);
+    }
+  };
 
   const tabs: { id: BrowserTab; label: string }[] = [
     { id: 'chrome', label: 'Chrome' },
@@ -331,7 +349,7 @@ function InstallInstructionsModal({ onClose }: { onClose: () => void }) {
               <button
                 key={t.id}
                 type="button"
-                onClick={() => setTab(t.id)}
+                onClick={() => { setTab(t.id); setAttemptFailed(false); }}
                 className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition-colors ${
                   tab === t.id ? 'bg-blue-600 text-white' : 'text-2 hover-surface'
                 }`}
@@ -368,6 +386,36 @@ function InstallInstructionsModal({ onClose }: { onClose: () => void }) {
               </ol>
             )}
           </div>
+
+          {/* Bouton d'installation directeutilise le prompt natif du
+              navigateur (beforeinstallprompt), disponible uniquement sur
+              Chrome/Edge. Safarin'expose aucune API d'installation
+              programmatique, donc le bouton y est désactivé d'emblée.
+              Sur Chrome/Edge, le bouton reste cliquable même si le prompt
+              n'est pas encore disponible, le message d'indisponibilité
+              n'apparaît qu'après une tentative infructueuse, pas par défaut. */}
+          <button
+            type="button"
+            onClick={handleInstallClick}
+            disabled={tab === 'safari'}
+            className={`press-effect w-full mt-4 py-3 rounded-xl text-sm font-semibold transition-colors flex items-center justify-center gap-2 ${
+              tab === 'safari'
+                ? 'bg-white/5 text-3 cursor-not-allowed'
+                : 'bg-blue-600 hover:bg-blue-500 text-white'
+            }`}
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v12m0 0l-4-4m4 4l4-4M4 20h16" />
+            </svg>
+            Install NextStop
+          </button>
+          {(tab === 'safari' || attemptFailed) && (
+            <p className="mt-2 text-center text-[11px] text-3">
+              {tab === 'safari'
+                ? 'Not supported on Safari - follow the steps above.'
+                : 'Not available yet in this browser - follow the steps above.'}
+            </p>
+          )}
         </div>
       </div>
     </div>
