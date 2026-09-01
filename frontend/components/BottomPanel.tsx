@@ -155,6 +155,13 @@ export default function BottomPanel({ children, stopsCount, stops = [], onOptimi
           </div>
         )}
 
+        {/* RM-01 / EF-05 : message discret une fois la limite de 15 arrêts atteinte */}
+        {stopsCount >= 15 && (
+          <p className="flex-shrink-0 px-4 pb-1 text-[11px] text-amber-400/90 text-center">
+            Maximum 15 stops reached
+          </p>
+        )}
+
         {/* Optimize button + results — always visible at the bottom, flex-shrink-0 */}
         {stopsCount > 1 && (
           <div className="flex-shrink-0 px-4 pt-2 pb-3 animate-fade-in-up">
