@@ -17,6 +17,16 @@
 /.next/
 /out/
 
+# PWA — fichiers générés par @ducanh2912/next-pwa à chaque build,
+# régénérés automatiquement par Vercel au déploiement.
+/public/sw.js
+/public/sw.js.map
+/public/swe-worker-*.js
+/public/swe-worker-*.js.map
+/public/workbox-*.js
+/public/workbox-*.js.map
+/public/fallback-*.js
+
 # production
 /build
 
