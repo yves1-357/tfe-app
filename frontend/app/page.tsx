@@ -33,7 +33,14 @@ export default function Home() {
     pingHealth();
   }, []);
 
+  // RM-01 / EF-05 : 15 arrêts maximum par trajet (limite utilisateur ; le
+  // solveur backend accepte un 16e nœud uniquement pour la position GPS,
+  // cf. §10.1 du rapport). Ce garde-fou évite d'atteindre silencieusement
+  // la limite backend au moment de l'optimisation.
+  const MAX_STOPS = 15;
+
   const handleAddStop = (place: { address: string; lat: number; lng: number; placeId: string }) => {
+    if (stops.length >= MAX_STOPS) return;
     const newStop: Stop = {
       id: Date.now().toString(),
       address: place.address,
